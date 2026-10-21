@@ -1,0 +1,326 @@
+[
+  {
+    "entity": "AgeRating",
+    "endpoint": "age_ratings"
+  },
+  {
+    "entity": "AgeRatingCategory",
+    "endpoint": "age_rating_categories"
+  },
+  {
+    "entity": "AgeRatingContentDescription",
+    "endpoint": "age_rating_content_descriptions"
+  },
+  {
+    "entity": "AgeRatingContentDescriptionType",
+    "endpoint": "age_rating_content_description_types"
+  },
+  {
+    "entity": "AgeRatingContentDescriptionV2",
+    "endpoint": "age_rating_content_descriptions_v2"
+  },
+  {
+    "entity": "AgeRatingOrganization",
+    "endpoint": "age_rating_organizations"
+  },
+  {
+    "entity": "AlternativeName",
+    "endpoint": "alternative_names"
+  },
+  {
+    "entity": "Artwork",
+    "endpoint": "artworks"
+  },
+  {
+    "entity": "ArtworkType",
+    "endpoint": "artwork_types"
+  },
+  {
+    "entity": "Character",
+    "endpoint": "characters"
+  },
+  {
+    "entity": "CharacterGender",
+    "endpoint": "character_genders"
+  },
+  {
+    "entity": "CharacterMugShot",
+    "endpoint": "character_mug_shots"
+  },
+  {
+    "entity": "CharacterSpecie",
+    "endpoint": "character_species"
+  },
+  {
+    "entity": "Collection",
+    "endpoint": "collections"
+  },
+  {
+    "entity": "CollectionMembership",
+    "endpoint": "collection_memberships"
+  },
+  {
+    "entity": "CollectionMembershipType",
+    "endpoint": "collection_membership_types"
+  },
+  {
+    "entity": "CollectionRelation",
+    "endpoint": "collection_relations"
+  },
+  {
+    "entity": "CollectionRelationType",
+    "endpoint": "collection_relation_types"
+  },
+  {
+    "entity": "CollectionType",
+    "endpoint": "collection_types"
+  },
+  {
+    "entity": "Company",
+    "endpoint": "companies"
+  },
+  {
+    "entity": "CompanyLogo",
+    "endpoint": "company_logos"
+  },
+  {
+    "entity": "CompanySize",
+    "endpoint": "company_sizes"
+  },
+  {
+    "entity": "CompanyStatus",
+    "endpoint": "company_statuses"
+  },
+  {
+    "entity": "CompanyType",
+    "endpoint": "company_types"
+  },
+  {
+    "entity": "CompanyTypeHistory",
+    "endpoint": "company_type_histories"
+  },
+  {
+    "entity": "CompanyWebsite",
+    "endpoint": "company_websites"
+  },
+  {
+    "entity": "Cover",
+    "endpoint": "covers"
+  },
+  {
+    "entity": "DateFormat",
+    "endpoint": "date_formats"
+  },
+  {
+    "entity": "EntityType",
+    "endpoint": "entity_types"
+  },
+  {
+    "entity": "Event",
+    "endpoint": "events"
+  },
+  {
+    "entity": "EventLogo",
+    "endpoint": "event_logos"
+  },
+  {
+    "entity": "EventNetwork",
+    "endpoint": "event_networks"
+  },
+  {
+    "entity": "Executable",
+    "endpoint": "executables"
+  },
+  {
+    "entity": "ExternalGame",
+    "endpoint": "external_games"
+  },
+  {
+    "entity": "ExternalGameSource",
+    "endpoint": "external_game_sources"
+  },
+  {
+    "entity": "Franchise",
+    "endpoint": "franchises"
+  },
+  {
+    "entity": "Game",
+    "endpoint": "games"
+  },
+  {
+    "entity": "GameEngine",
+    "endpoint": "game_engines"
+  },
+  {
+    "entity": "GameEngineLogo",
+    "endpoint": "game_engine_logos"
+  },
+  {
+    "entity": "GameLocalization",
+    "endpoint": "game_localizations"
+  },
+  {
+    "entity": "GameMode",
+    "endpoint": "game_modes"
+  },
+  {
+    "entity": "GameReleaseFormat",
+    "endpoint": "game_release_formats"
+  },
+  {
+    "entity": "GameStatus",
+    "endpoint": "game_statuses"
+  },
+  {
+    "entity": "GameTimeToBeat",
+    "endpoint": "game_time_to_beats"
+  },
+  {
+    "entity": "GameType",
+    "endpoint": "game_types"
+  },
+  {
+    "entity": "GameVersion",
+    "endpoint": "game_versions"
+  },
+  {
+    "entity": "GameVersionFeature",
+    "endpoint": "game_version_features"
+  },
+  {
+    "entity": "GameVersionFeatureValue",
+    "endpoint": "game_version_feature_values"
+  },
+  {
+    "entity": "GameVideo",
+    "endpoint": "game_videos"
+  },
+  {
+    "entity": "Genre",
+    "endpoint": "genres"
+  },
+  {
+    "entity": "ImageType",
+    "endpoint": "image_types"
+  },
+  {
+    "entity": "Keyword",
+    "endpoint": "keywords"
+  },
+  {
+    "entity": "InvolvedCompany",
+    "endpoint": "involved_companies"
+  },
+  {
+    "entity": "Language",
+    "endpoint": "languages"
+  },
+  {
+    "entity": "LanguageSupport",
+    "endpoint": "language_supports"
+  },
+  {
+    "entity": "LanguageSupportType",
+    "endpoint": "language_support_types"
+  },
+  {
+    "entity": "Logo",
+    "endpoint": "logos"
+  },
+  {
+    "entity": "MultiplayerMode",
+    "endpoint": "multiplayer_modes"
+  },
+  {
+    "entity": "NetworkType",
+    "endpoint": "network_types"
+  },
+  {
+    "entity": "Platform",
+    "endpoint": "platforms"
+  },
+  {
+    "entity": "PlatformFamily",
+    "endpoint": "platform_families"
+  },
+  {
+    "entity": "PlatformLogo",
+    "endpoint": "platform_logos"
+  },
+  {
+    "entity": "PlatformType",
+    "endpoint": "platform_types"
+  },
+  {
+    "entity": "PlatformVersion",
+    "endpoint": "platform_versions"
+  },
+  {
+    "entity": "PlatformVersionCompany",
+    "endpoint": "platform_version_companies"
+  },
+  {
+    "entity": "PlatformVersionReleaseDate",
+    "endpoint": "platform_version_release_dates"
+  },
+  {
+    "entity": "PlatformWebsite",
+    "endpoint": "platform_websites"
+  },
+  {
+    "entity": "PlayerPerspective",
+    "endpoint": "player_perspectives"
+  },
+  {
+    "entity": "PopularityPrimitive",
+    "endpoint": "popularity_primitives"
+  },
+  {
+    "entity": "PopularityType",
+    "endpoint": "popularity_types"
+  },
+  {
+    "entity": "Region",
+    "endpoint": "regions"
+  },
+  {
+    "entity": "ReleaseDate",
+    "endpoint": "release_dates"
+  },
+  {
+    "entity": "ReleaseDateRegion",
+    "endpoint": "release_date_regions"
+  },
+  {
+    "entity": "ReleaseDateStatus",
+    "endpoint": "release_date_statuses"
+  },
+  {
+    "entity": "Report",
+    "endpoint": "reports"
+  },
+  {
+    "entity": "ReportType",
+    "endpoint": "report_types"
+  },
+  {
+    "entity": "Screenshot",
+    "endpoint": "screenshots"
+  },
+  {
+    "entity": "Search",
+    "endpoint": "search"
+  },
+  {
+    "entity": "Theme",
+    "endpoint": "themes"
+  },
+  {
+    "entity": "Website",
+    "endpoint": "websites"
+  },
+  {
+    "entity": "WebsiteType",
+    "endpoint": "website_types"
+  }
+]

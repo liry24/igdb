@@ -1,0 +1,10 @@
+node_modules/
+dist/
+coverage/
+.upm-store/
+.package-check/
+*.tgz
+*.tsbuildinfo
+.env
+.env.*
+!.env.example

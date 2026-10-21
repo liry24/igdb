@@ -1,0 +1,12 @@
+{
+  "schemaUrl": "https://api.igdb.com/v4/igdbapi.proto",
+  "docsUrl": "https://api-docs.igdb.com/",
+  "retrievedAt": "2026-10-21T08:58:18.744Z",
+  "schemaSha256": "3c2fc36d68a60d8e2f35b8741bcf4a401a58aafa8dc0bc15827a68a7f52849e5",
+  "endpointsSha256": "db4f577570412cab6550f87d70eb18945de564bb34de8cd58180f135b64c4770",
+  "notes": [
+    "Entity fields come from the official IGDB v4 protobuf schema; these are JSON response types, not protobuf codecs.",
+    "Endpoint names come from the official endpoint documentation and are checked against protobuf result messages.",
+    "Undocumented entity messages are retained for referenced field types but do not become supported endpoints."
+  ]
+}

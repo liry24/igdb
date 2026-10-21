@@ -1,0 +1,74 @@
+{
+  "name": "@liry24/igdb",
+  "version": "0.1.0",
+  "description": "A small, type-safe, zero-dependency IGDB API client for Node.js and Web runtimes.",
+  "keywords": [
+    "igdb",
+    "twitch",
+    "apicalypse",
+    "typescript",
+    "games",
+    "api"
+  ],
+  "license": "MIT",
+  "author": "Liry24",
+  "homepage": "https://github.com/liry24/igdb#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/liry24/igdb.git"
+  },
+  "bugs": {
+    "url": "https://github.com/liry24/igdb/issues"
+  },
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md",
+    "THIRD_PARTY_NOTICES.md"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "packageManager": "upm@1.5.0",
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "check": "npm run schema:check && npm run lint && npm run format:check && npm run typecheck && npm test && npm run build && npm run typecheck:package && npm run pack:check",
+    "schema:generate": "node scripts/generate-schema.ts",
+    "schema:check": "node scripts/generate-schema.ts --check",
+    "schema:update": "node scripts/generate-schema.ts --update",
+    "format": "oxfmt .",
+    "format:check": "oxfmt --check .",
+    "lint": "oxlint .",
+    "lint:fix": "oxlint --fix .",
+    "typecheck": "tsrs --noEmit",
+    "typecheck:package": "tsrs -p tsconfig.consumer.json && tsrs -p tsconfig.consumer.json --module ESNext --moduleResolution Bundler",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "deps:update": "taze major -w",
+    "pack:check": "node scripts/verify-package.ts --prepare && npm pack --ignore-scripts --pack-destination .package-check && node --experimental-vm-modules scripts/verify-package.ts",
+    "prepack": "npm run build"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.2",
+    "oxfmt": "^0.74.0",
+    "oxlint": "^1.89.0",
+    "taze": "^21.3.0",
+    "tsdown": "^0.23.1",
+    "tsrs": "0.18.0-ts7.1.0-dev.20260929",
+    "vite": "^8.3.5",
+    "vitest": "^5.0.5"
+  }
+}
