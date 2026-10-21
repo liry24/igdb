@@ -105,11 +105,14 @@ async function verify(): Promise<void> {
     const runtime = entries.get('package/dist/index.js')!
     const declarations = entries.get('package/dist/index.d.ts')!
     assert(runtime.length > 0 && declarations.length > 0, 'Build output must not be empty')
-    await Promise.all(
-        ['LICENSE', 'THIRD_PARTY_NOTICES.md'].map(async (path) => {
-            assert.deepEqual(entries.get(`package/${path}`), await readFile(new URL(`../${path}`, import.meta.url)))
-        }),
-    )
+    // Consumers verify the archive hash; checkout line endings can differ across operating systems.
+    if (args[0] !== '--consumer') {
+        await Promise.all(
+            ['LICENSE', 'THIRD_PARTY_NOTICES.md'].map(async (path) => {
+                assert.deepEqual(entries.get(`package/${path}`), await readFile(new URL(`../${path}`, import.meta.url)))
+            }),
+        )
+    }
 
     // No process, Buffer, require, or Node modules are available in this realm.
     // This checks standard Web APIs, not Cloudflare's full runtime integration.
