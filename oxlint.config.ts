@@ -7,7 +7,15 @@ export default defineConfig({
         suspicious: 'error',
     },
     env: { es2022: true, worker: true },
-    ignorePatterns: ['**/coverage/**', '**/dist/**', '**/node_modules/**', '.upm-store/**', '.package-check/**'],
+    ignorePatterns: [
+        '**/coverage/**',
+        '**/dist/**',
+        '**/node_modules/**',
+        '.upm-store/**',
+        '.package-check/**',
+        // This fixture imports built declarations and is checked by typecheck:package after build.
+        'scripts/consumer-types.ts',
+    ],
     options: {
         typeAware: true,
         typeCheck: true,
