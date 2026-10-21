@@ -2,25 +2,25 @@ name: Setup workspace
 description: Install the pinned Node/upm toolchain and locked development dependencies
 
 runs:
-  using: composite
-  steps:
-    - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-      with:
-        node-version-file: .node-version
-        package-manager-cache: false
-    - uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5
-      with:
-        path: ${{ runner.temp }}/pm-cache
-        key: downloads-${{ runner.os }}-upm-1.5.0-${{ hashFiles('upm.lock') }}
-        restore-keys: downloads-${{ runner.os }}-upm-1.5.0-
-    - shell: bash
-      env:
-        UPM_STORE: ${{ runner.temp }}/pm-cache/upm
-        npm_config_cache: ${{ runner.temp }}/pm-cache/npm
-      run: |
-        echo "UPM_STORE=$UPM_STORE" >> "$GITHUB_ENV"
-        echo "npm_config_cache=$npm_config_cache" >> "$GITHUB_ENV"
-    - shell: bash
-      run: npm install --global --ignore-scripts upm@1.5.0
-    - shell: bash
-      run: upm install --frozen-lockfile
+    using: composite
+    steps:
+        - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+          with:
+              node-version-file: .node-version
+              package-manager-cache: false
+        - uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5
+          with:
+              path: ${{ runner.temp }}/pm-cache
+              key: downloads-${{ runner.os }}-upm-1.5.0-${{ hashFiles('upm.lock') }}
+              restore-keys: downloads-${{ runner.os }}-upm-1.5.0-
+        - shell: bash
+          env:
+              UPM_STORE: ${{ runner.temp }}/pm-cache/upm
+              npm_config_cache: ${{ runner.temp }}/pm-cache/npm
+          run: |
+              echo "UPM_STORE=$UPM_STORE" >> "$GITHUB_ENV"
+              echo "npm_config_cache=$npm_config_cache" >> "$GITHUB_ENV"
+        - shell: bash
+          run: npm install --global --ignore-scripts upm@1.5.0
+        - shell: bash
+          run: upm install --frozen-lockfile

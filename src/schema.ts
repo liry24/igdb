@@ -5,1328 +5,1309 @@
 // Only id is guaranteed; other properties may be absent even when requested.
 
 /** @deprecated IGDB is migrating enum fields to related entity tables. */
-export type AgeRatingCategoryEnum = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
+export type AgeRatingCategoryEnum = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7
 
 /** @deprecated IGDB is migrating enum fields to related entity tables. */
 export type AgeRatingRatingEnum =
-  | 0
-  | 1
-  | 2
-  | 3
-  | 4
-  | 5
-  | 6
-  | 7
-  | 8
-  | 9
-  | 10
-  | 11
-  | 12
-  | 13
-  | 14
-  | 15
-  | 16
-  | 17
-  | 18
-  | 19
-  | 20
-  | 21
-  | 22
-  | 23
-  | 24
-  | 25
-  | 26
-  | 27
-  | 28
-  | 29
-  | 30
-  | 31
-  | 32
-  | 33
-  | 34
-  | 35
-  | 36
-  | 37
-  | 38
-  | 39;
+    | 0
+    | 1
+    | 2
+    | 3
+    | 4
+    | 5
+    | 6
+    | 7
+    | 8
+    | 9
+    | 10
+    | 11
+    | 12
+    | 13
+    | 14
+    | 15
+    | 16
+    | 17
+    | 18
+    | 19
+    | 20
+    | 21
+    | 22
+    | 23
+    | 24
+    | 25
+    | 26
+    | 27
+    | 28
+    | 29
+    | 30
+    | 31
+    | 32
+    | 33
+    | 34
+    | 35
+    | 36
+    | 37
+    | 38
+    | 39
 
 /** @deprecated IGDB is migrating enum fields to related entity tables. */
 export type AgeRatingContentDescriptionCategoryEnum =
-  | 0
-  | 1
-  | 2
-  | 3
-  | 4
-  | 5
-  | 6
-  | 7
-  | 8
-  | 9
-  | 10
-  | 11
-  | 12
-  | 13
-  | 14
-  | 15
-  | 16
-  | 17
-  | 18
-  | 19
-  | 20
-  | 21
-  | 22
-  | 23
-  | 24
-  | 25
-  | 26
-  | 27
-  | 28
-  | 29
-  | 30
-  | 31
-  | 32
-  | 33
-  | 34
-  | 35
-  | 36
-  | 37
-  | 38
-  | 39
-  | 40
-  | 41
-  | 42
-  | 43
-  | 44
-  | 45
-  | 46
-  | 47
-  | 48
-  | 49
-  | 50
-  | 51
-  | 52
-  | 53
-  | 54
-  | 55
-  | 56
-  | 57
-  | 58
-  | 59
-  | 60
-  | 61
-  | 62
-  | 63
-  | 64
-  | 65
-  | 66
-  | 67
-  | 68
-  | 69
-  | 70
-  | 71
-  | 72
-  | 73
-  | 74
-  | 75
-  | 76
-  | 77
-  | 78
-  | 79
-  | 80
-  | 81
-  | 82
-  | 83
-  | 84
-  | 85;
+    | 0
+    | 1
+    | 2
+    | 3
+    | 4
+    | 5
+    | 6
+    | 7
+    | 8
+    | 9
+    | 10
+    | 11
+    | 12
+    | 13
+    | 14
+    | 15
+    | 16
+    | 17
+    | 18
+    | 19
+    | 20
+    | 21
+    | 22
+    | 23
+    | 24
+    | 25
+    | 26
+    | 27
+    | 28
+    | 29
+    | 30
+    | 31
+    | 32
+    | 33
+    | 34
+    | 35
+    | 36
+    | 37
+    | 38
+    | 39
+    | 40
+    | 41
+    | 42
+    | 43
+    | 44
+    | 45
+    | 46
+    | 47
+    | 48
+    | 49
+    | 50
+    | 51
+    | 52
+    | 53
+    | 54
+    | 55
+    | 56
+    | 57
+    | 58
+    | 59
+    | 60
+    | 61
+    | 62
+    | 63
+    | 64
+    | 65
+    | 66
+    | 67
+    | 68
+    | 69
+    | 70
+    | 71
+    | 72
+    | 73
+    | 74
+    | 75
+    | 76
+    | 77
+    | 78
+    | 79
+    | 80
+    | 81
+    | 82
+    | 83
+    | 84
+    | 85
 
 /** @deprecated IGDB is migrating enum fields to related entity tables. */
-export type GenderGenderEnum = 0 | 1 | 2;
+export type GenderGenderEnum = 0 | 1 | 2
 
 /** @deprecated IGDB is migrating enum fields to related entity tables. */
-export type CharacterSpeciesEnum = 0 | 1 | 2 | 3 | 4 | 5;
+export type CharacterSpeciesEnum = 0 | 1 | 2 | 3 | 4 | 5
 
 /** @deprecated IGDB is migrating enum fields to related entity tables. */
-export type DateFormatChangeDateCategoryEnum = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
+export type DateFormatChangeDateCategoryEnum = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7
 
 /** @deprecated IGDB is migrating enum fields to related entity tables. */
-export type WebsiteCategoryEnum =
-  | 0
-  | 1
-  | 2
-  | 3
-  | 4
-  | 5
-  | 6
-  | 8
-  | 9
-  | 10
-  | 11
-  | 12
-  | 13
-  | 14
-  | 15
-  | 16
-  | 17
-  | 18
-  | 19;
+export type WebsiteCategoryEnum = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19
 
 /** @deprecated IGDB is migrating enum fields to related entity tables. */
 export type ExternalGameCategoryEnum =
-  | 0
-  | 1
-  | 5
-  | 10
-  | 11
-  | 13
-  | 14
-  | 15
-  | 20
-  | 22
-  | 23
-  | 26
-  | 28
-  | 29
-  | 30
-  | 31
-  | 32
-  | 36
-  | 37
-  | 54
-  | 55;
+    | 0
+    | 1
+    | 5
+    | 10
+    | 11
+    | 13
+    | 14
+    | 15
+    | 20
+    | 22
+    | 23
+    | 26
+    | 28
+    | 29
+    | 30
+    | 31
+    | 32
+    | 36
+    | 37
+    | 54
+    | 55
 
 /** @deprecated IGDB is migrating enum fields to related entity tables. */
-export type ExternalGameMediaEnum = 0 | 1 | 2;
+export type ExternalGameMediaEnum = 0 | 1 | 2
 
 /** @deprecated IGDB is migrating enum fields to related entity tables. */
-export type GameCategoryEnum = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14;
+export type GameCategoryEnum = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14
 
 /** @deprecated IGDB is migrating enum fields to related entity tables. */
-export type GameStatusEnum = 0 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
+export type GameStatusEnum = 0 | 2 | 3 | 4 | 5 | 6 | 7 | 8
 
-export type GameVersionFeatureCategoryEnum = 0 | 1;
+export type GameVersionFeatureCategoryEnum = 0 | 1
 
-export type GameVersionFeatureValueIncludedFeatureEnum = 0 | 1 | 2;
-
-/** @deprecated IGDB is migrating enum fields to related entity tables. */
-export type PlatformCategoryEnum = 0 | 1 | 2 | 3 | 4 | 5 | 6;
+export type GameVersionFeatureValueIncludedFeatureEnum = 0 | 1 | 2
 
 /** @deprecated IGDB is migrating enum fields to related entity tables. */
-export type RegionRegionEnum = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
+export type PlatformCategoryEnum = 0 | 1 | 2 | 3 | 4 | 5 | 6
 
 /** @deprecated IGDB is migrating enum fields to related entity tables. */
-export type PopularitySourcePopularitySourceEnum = 0 | 121;
+export type RegionRegionEnum = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10
 
-export type TestDummyEnumTestEnum = 0 | 1 | 2;
+/** @deprecated IGDB is migrating enum fields to related entity tables. */
+export type PopularitySourcePopularitySourceEnum = 0 | 121
+
+export type TestDummyEnumTestEnum = 0 | 1 | 2
 
 export interface AgeRating {
-  id: number;
-  /** @deprecated Marked deprecated in the official IGDB schema. */
-  category?: AgeRatingCategoryEnum;
-  /** @deprecated Marked deprecated in the official IGDB schema. */
-  content_descriptions?: number[] | AgeRatingContentDescription[];
-  /** @deprecated Marked deprecated in the official IGDB schema. */
-  rating?: AgeRatingRatingEnum;
-  rating_cover_url?: string;
-  synopsis?: string;
-  checksum?: string;
-  organization?: number | AgeRatingOrganization;
-  rating_category?: number | AgeRatingCategory;
-  rating_content_descriptions?: number[] | AgeRatingContentDescriptionV2[];
+    id: number
+    /** @deprecated Marked deprecated in the official IGDB schema. */
+    category?: AgeRatingCategoryEnum
+    /** @deprecated Marked deprecated in the official IGDB schema. */
+    content_descriptions?: number[] | AgeRatingContentDescription[]
+    /** @deprecated Marked deprecated in the official IGDB schema. */
+    rating?: AgeRatingRatingEnum
+    rating_cover_url?: string
+    synopsis?: string
+    checksum?: string
+    organization?: number | AgeRatingOrganization
+    rating_category?: number | AgeRatingCategory
+    rating_content_descriptions?: number[] | AgeRatingContentDescriptionV2[]
 }
 
 export interface AgeRatingCategory {
-  id: number;
-  rating?: string;
-  organization?: number | AgeRatingOrganization;
-  created_at?: number;
-  updated_at?: number;
-  checksum?: string;
+    id: number
+    rating?: string
+    organization?: number | AgeRatingOrganization
+    created_at?: number
+    updated_at?: number
+    checksum?: string
 }
 
 export interface AgeRatingContentDescription {
-  id: number;
-  /** @deprecated Marked deprecated in the official IGDB schema. */
-  category?: AgeRatingContentDescriptionCategoryEnum;
-  description?: string;
-  checksum?: string;
+    id: number
+    /** @deprecated Marked deprecated in the official IGDB schema. */
+    category?: AgeRatingContentDescriptionCategoryEnum
+    description?: string
+    checksum?: string
 }
 
 export interface AgeRatingContentDescriptionType {
-  id: number;
-  slug?: string;
-  name?: string;
-  created_at?: number;
-  updated_at?: number;
-  checksum?: string;
+    id: number
+    slug?: string
+    name?: string
+    created_at?: number
+    updated_at?: number
+    checksum?: string
 }
 
 export interface AgeRatingContentDescriptionV2 {
-  id: number;
-  description?: string;
-  organization?: number | AgeRatingOrganization;
-  created_at?: number;
-  updated_at?: number;
-  checksum?: string;
-  description_type?: number | AgeRatingContentDescriptionType;
+    id: number
+    description?: string
+    organization?: number | AgeRatingOrganization
+    created_at?: number
+    updated_at?: number
+    checksum?: string
+    description_type?: number | AgeRatingContentDescriptionType
 }
 
 export interface AgeRatingOrganization {
-  id: number;
-  name?: string;
-  created_at?: number;
-  updated_at?: number;
-  checksum?: string;
+    id: number
+    name?: string
+    created_at?: number
+    updated_at?: number
+    checksum?: string
 }
 
 export interface AlternativeName {
-  id: number;
-  comment?: string;
-  game?: number | Game;
-  name?: string;
-  checksum?: string;
+    id: number
+    comment?: string
+    game?: number | Game
+    name?: string
+    checksum?: string
 }
 
 export interface Executable {
-  id: number;
-  game?: number | Game;
-  name?: string;
-  store?: string;
-  platform?: number | Platform;
-  file_path?: string;
-  checksum?: string;
+    id: number
+    game?: number | Game
+    name?: string
+    store?: string
+    platform?: number | Platform
+    file_path?: string
+    checksum?: string
 }
 
 export interface Artwork {
-  id: number;
-  alpha_channel?: boolean;
-  animated?: boolean;
-  game?: number | Game;
-  height?: number;
-  image_id?: string;
-  url?: string;
-  width?: number;
-  checksum?: string;
-  /** @deprecated Marked deprecated in the official IGDB schema. */
-  artwork_type?: number | ArtworkType;
-  image_type?: number | ImageType;
+    id: number
+    alpha_channel?: boolean
+    animated?: boolean
+    game?: number | Game
+    height?: number
+    image_id?: string
+    url?: string
+    width?: number
+    checksum?: string
+    /** @deprecated Marked deprecated in the official IGDB schema. */
+    artwork_type?: number | ArtworkType
+    image_type?: number | ImageType
 }
 
 export interface ArtworkType {
-  id: number;
-  slug?: string;
-  name?: string;
-  created_at?: number;
-  updated_at?: number;
-  checksum?: string;
+    id: number
+    slug?: string
+    name?: string
+    created_at?: number
+    updated_at?: number
+    checksum?: string
 }
 
 export interface Character {
-  id: number;
-  akas?: string[];
-  country_name?: string;
-  created_at?: number;
-  description?: string;
-  games?: number[] | Game[];
-  /** @deprecated Marked deprecated in the official IGDB schema. */
-  gender?: GenderGenderEnum;
-  mug_shot?: number | CharacterMugShot;
-  name?: string;
-  slug?: string;
-  /** @deprecated Marked deprecated in the official IGDB schema. */
-  species?: CharacterSpeciesEnum;
-  updated_at?: number;
-  url?: string;
-  checksum?: string;
-  character_gender?: number | CharacterGender;
-  character_species?: number | CharacterSpecie;
+    id: number
+    akas?: string[]
+    country_name?: string
+    created_at?: number
+    description?: string
+    games?: number[] | Game[]
+    /** @deprecated Marked deprecated in the official IGDB schema. */
+    gender?: GenderGenderEnum
+    mug_shot?: number | CharacterMugShot
+    name?: string
+    slug?: string
+    /** @deprecated Marked deprecated in the official IGDB schema. */
+    species?: CharacterSpeciesEnum
+    updated_at?: number
+    url?: string
+    checksum?: string
+    character_gender?: number | CharacterGender
+    character_species?: number | CharacterSpecie
 }
 
 export interface CharacterGender {
-  id: number;
-  name?: string;
-  created_at?: number;
-  updated_at?: number;
-  checksum?: string;
+    id: number
+    name?: string
+    created_at?: number
+    updated_at?: number
+    checksum?: string
 }
 
 export interface CharacterMugShot {
-  id: number;
-  alpha_channel?: boolean;
-  animated?: boolean;
-  height?: number;
-  image_id?: string;
-  url?: string;
-  width?: number;
-  checksum?: string;
+    id: number
+    alpha_channel?: boolean
+    animated?: boolean
+    height?: number
+    image_id?: string
+    url?: string
+    width?: number
+    checksum?: string
 }
 
 export interface CharacterSpecie {
-  id: number;
-  name?: string;
-  created_at?: number;
-  updated_at?: number;
-  checksum?: string;
+    id: number
+    name?: string
+    created_at?: number
+    updated_at?: number
+    checksum?: string
 }
 
 export interface Collection {
-  id: number;
-  created_at?: number;
-  games?: number[] | Game[];
-  name?: string;
-  slug?: string;
-  updated_at?: number;
-  url?: string;
-  checksum?: string;
-  type?: number | CollectionType;
-  as_parent_relations?: number[] | CollectionRelation[];
-  as_child_relations?: number[] | CollectionRelation[];
+    id: number
+    created_at?: number
+    games?: number[] | Game[]
+    name?: string
+    slug?: string
+    updated_at?: number
+    url?: string
+    checksum?: string
+    type?: number | CollectionType
+    as_parent_relations?: number[] | CollectionRelation[]
+    as_child_relations?: number[] | CollectionRelation[]
 }
 
 export interface CollectionMembership {
-  id: number;
-  game?: number | Game;
-  collection?: number | Collection;
-  type?: number | CollectionMembershipType;
-  updated_at?: number;
-  created_at?: number;
-  checksum?: string;
+    id: number
+    game?: number | Game
+    collection?: number | Collection
+    type?: number | CollectionMembershipType
+    updated_at?: number
+    created_at?: number
+    checksum?: string
 }
 
 export interface CollectionMembershipType {
-  id: number;
-  name?: string;
-  description?: string;
-  allowed_collection_type?: number | CollectionType;
-  updated_at?: number;
-  created_at?: number;
-  checksum?: string;
+    id: number
+    name?: string
+    description?: string
+    allowed_collection_type?: number | CollectionType
+    updated_at?: number
+    created_at?: number
+    checksum?: string
 }
 
 export interface CollectionRelation {
-  id: number;
-  child_collection?: number | Collection;
-  parent_collection?: number | Collection;
-  type?: number | CollectionRelationType;
-  updated_at?: number;
-  created_at?: number;
-  checksum?: string;
+    id: number
+    child_collection?: number | Collection
+    parent_collection?: number | Collection
+    type?: number | CollectionRelationType
+    updated_at?: number
+    created_at?: number
+    checksum?: string
 }
 
 export interface CollectionRelationType {
-  id: number;
-  name?: string;
-  description?: string;
-  allowed_child_type?: number | CollectionType;
-  allowed_parent_type?: number | CollectionType;
-  updated_at?: number;
-  created_at?: number;
-  checksum?: string;
+    id: number
+    name?: string
+    description?: string
+    allowed_child_type?: number | CollectionType
+    allowed_parent_type?: number | CollectionType
+    updated_at?: number
+    created_at?: number
+    checksum?: string
 }
 
 export interface CollectionType {
-  id: number;
-  name?: string;
-  description?: string;
-  updated_at?: number;
-  created_at?: number;
-  checksum?: string;
+    id: number
+    name?: string
+    description?: string
+    updated_at?: number
+    created_at?: number
+    checksum?: string
 }
 
 export interface Company {
-  id: number;
-  change_date?: number;
-  /** @deprecated Marked deprecated in the official IGDB schema. */
-  change_date_category?: DateFormatChangeDateCategoryEnum;
-  changed_company_id?: number | Company;
-  country?: number;
-  created_at?: number;
-  description?: string;
-  developed?: number[] | Game[];
-  logo?: number | CompanyLogo;
-  name?: string;
-  parent?: number | Company;
-  published?: number[] | Game[];
-  slug?: string;
-  start_date?: number;
-  /** @deprecated Marked deprecated in the official IGDB schema. */
-  start_date_category?: DateFormatChangeDateCategoryEnum;
-  updated_at?: number;
-  url?: string;
-  websites?: number[] | CompanyWebsite[];
-  checksum?: string;
-  status?: number | CompanyStatus;
-  start_date_format?: number | DateFormat;
-  change_date_format?: number | DateFormat;
-  company_size?: number | CompanySize;
-  company_type_histories?: number[] | CompanyTypeHistory[];
+    id: number
+    change_date?: number
+    /** @deprecated Marked deprecated in the official IGDB schema. */
+    change_date_category?: DateFormatChangeDateCategoryEnum
+    changed_company_id?: number | Company
+    country?: number
+    created_at?: number
+    description?: string
+    developed?: number[] | Game[]
+    logo?: number | CompanyLogo
+    name?: string
+    parent?: number | Company
+    published?: number[] | Game[]
+    slug?: string
+    start_date?: number
+    /** @deprecated Marked deprecated in the official IGDB schema. */
+    start_date_category?: DateFormatChangeDateCategoryEnum
+    updated_at?: number
+    url?: string
+    websites?: number[] | CompanyWebsite[]
+    checksum?: string
+    status?: number | CompanyStatus
+    start_date_format?: number | DateFormat
+    change_date_format?: number | DateFormat
+    company_size?: number | CompanySize
+    company_type_histories?: number[] | CompanyTypeHistory[]
 }
 
 export interface CompanyLogo {
-  id: number;
-  alpha_channel?: boolean;
-  animated?: boolean;
-  height?: number;
-  image_id?: string;
-  url?: string;
-  width?: number;
-  checksum?: string;
+    id: number
+    alpha_channel?: boolean
+    animated?: boolean
+    height?: number
+    image_id?: string
+    url?: string
+    width?: number
+    checksum?: string
 }
 
 export interface CompanySize {
-  id: number;
-  name?: string;
-  created_at?: number;
-  updated_at?: number;
-  checksum?: string;
+    id: number
+    name?: string
+    created_at?: number
+    updated_at?: number
+    checksum?: string
 }
 
 export interface CompanyStatus {
-  id: number;
-  name?: string;
-  created_at?: number;
-  updated_at?: number;
-  checksum?: string;
+    id: number
+    name?: string
+    created_at?: number
+    updated_at?: number
+    checksum?: string
 }
 
 export interface CompanyType {
-  id: number;
-  name?: string;
-  created_at?: number;
-  updated_at?: number;
-  checksum?: string;
+    id: number
+    name?: string
+    created_at?: number
+    updated_at?: number
+    checksum?: string
 }
 
 export interface CompanyTypeHistory {
-  id: number;
-  company?: number | Company;
-  company_type?: number | CompanyType;
-  parent_company?: number | Company;
-  created_at?: number;
-  updated_at?: number;
-  checksum?: string;
+    id: number
+    company?: number | Company
+    company_type?: number | CompanyType
+    parent_company?: number | Company
+    created_at?: number
+    updated_at?: number
+    checksum?: string
 }
 
 export interface CompanyWebsite {
-  id: number;
-  /** @deprecated Marked deprecated in the official IGDB schema. */
-  category?: WebsiteCategoryEnum;
-  trusted?: boolean;
-  url?: string;
-  checksum?: string;
-  type?: number | WebsiteType;
+    id: number
+    /** @deprecated Marked deprecated in the official IGDB schema. */
+    category?: WebsiteCategoryEnum
+    trusted?: boolean
+    url?: string
+    checksum?: string
+    type?: number | WebsiteType
 }
 
 /** @internal Present in the official schema; no documented public endpoint. */
 export interface ContentSafetyRating {
-  id: number;
-  name?: string;
-  created_at?: number;
-  updated_at?: number;
-  checksum?: string;
+    id: number
+    name?: string
+    created_at?: number
+    updated_at?: number
+    checksum?: string
 }
 
 /** @internal Present in the official schema; no documented public endpoint. */
 export interface ContentSafetyRatingDimension {
-  id: number;
-  content_safety_rating?: number | ContentSafetyRating;
-  value?: number;
-  description?: string;
-  created_at?: number;
-  updated_at?: number;
-  checksum?: string;
+    id: number
+    content_safety_rating?: number | ContentSafetyRating
+    value?: number
+    description?: string
+    created_at?: number
+    updated_at?: number
+    checksum?: string
 }
 
 export interface Cover {
-  id: number;
-  alpha_channel?: boolean;
-  animated?: boolean;
-  game?: number | Game;
-  height?: number;
-  image_id?: string;
-  url?: string;
-  width?: number;
-  checksum?: string;
-  game_localization?: number | GameLocalization;
-  image_type?: number | ImageType;
+    id: number
+    alpha_channel?: boolean
+    animated?: boolean
+    game?: number | Game
+    height?: number
+    image_id?: string
+    url?: string
+    width?: number
+    checksum?: string
+    game_localization?: number | GameLocalization
+    image_type?: number | ImageType
 }
 
 export interface DateFormat {
-  id: number;
-  format?: string;
-  created_at?: number;
-  updated_at?: number;
-  checksum?: string;
+    id: number
+    format?: string
+    created_at?: number
+    updated_at?: number
+    checksum?: string
 }
 
 export interface EntityType {
-  id: number;
-  name?: string;
-  description?: string;
-  created_at?: number;
-  updated_at?: number;
-  checksum?: string;
+    id: number
+    name?: string
+    description?: string
+    created_at?: number
+    updated_at?: number
+    checksum?: string
 }
 
 export interface Event {
-  id: number;
-  name?: string;
-  description?: string;
-  slug?: string;
-  event_logo?: number | EventLogo;
-  start_time?: number;
-  time_zone?: string;
-  end_time?: number;
-  live_stream_url?: string;
-  games?: number[] | Game[];
-  videos?: number[] | GameVideo[];
-  event_networks?: number[] | EventNetwork[];
-  created_at?: number;
-  updated_at?: number;
-  checksum?: string;
+    id: number
+    name?: string
+    description?: string
+    slug?: string
+    event_logo?: number | EventLogo
+    start_time?: number
+    time_zone?: string
+    end_time?: number
+    live_stream_url?: string
+    games?: number[] | Game[]
+    videos?: number[] | GameVideo[]
+    event_networks?: number[] | EventNetwork[]
+    created_at?: number
+    updated_at?: number
+    checksum?: string
 }
 
 export interface EventLogo {
-  id: number;
-  event?: number | Event;
-  alpha_channel?: boolean;
-  animated?: boolean;
-  height?: number;
-  image_id?: string;
-  url?: string;
-  width?: number;
-  created_at?: number;
-  updated_at?: number;
-  checksum?: string;
+    id: number
+    event?: number | Event
+    alpha_channel?: boolean
+    animated?: boolean
+    height?: number
+    image_id?: string
+    url?: string
+    width?: number
+    created_at?: number
+    updated_at?: number
+    checksum?: string
 }
 
 export interface EventNetwork {
-  id: number;
-  event?: number | Event;
-  url?: string;
-  network_type?: number | NetworkType;
-  created_at?: number;
-  updated_at?: number;
-  checksum?: string;
+    id: number
+    event?: number | Event
+    url?: string
+    network_type?: number | NetworkType
+    created_at?: number
+    updated_at?: number
+    checksum?: string
 }
 
 export interface ExternalGame {
-  id: number;
-  /** @deprecated Marked deprecated in the official IGDB schema. */
-  category?: ExternalGameCategoryEnum;
-  created_at?: number;
-  game?: number | Game;
-  name?: string;
-  uid?: string;
-  updated_at?: number;
-  url?: string;
-  year?: number;
-  /** @deprecated Marked deprecated in the official IGDB schema. */
-  media?: ExternalGameMediaEnum;
-  platform?: number | Platform;
-  countries?: number[];
-  checksum?: string;
-  external_game_source?: number | ExternalGameSource;
-  game_release_format?: number | GameReleaseFormat;
+    id: number
+    /** @deprecated Marked deprecated in the official IGDB schema. */
+    category?: ExternalGameCategoryEnum
+    created_at?: number
+    game?: number | Game
+    name?: string
+    uid?: string
+    updated_at?: number
+    url?: string
+    year?: number
+    /** @deprecated Marked deprecated in the official IGDB schema. */
+    media?: ExternalGameMediaEnum
+    platform?: number | Platform
+    countries?: number[]
+    checksum?: string
+    external_game_source?: number | ExternalGameSource
+    game_release_format?: number | GameReleaseFormat
 }
 
 export interface ExternalGameSource {
-  id: number;
-  name?: string;
-  created_at?: number;
-  updated_at?: number;
-  checksum?: string;
+    id: number
+    name?: string
+    created_at?: number
+    updated_at?: number
+    checksum?: string
 }
 
 export interface Franchise {
-  id: number;
-  created_at?: number;
-  games?: number[] | Game[];
-  name?: string;
-  slug?: string;
-  updated_at?: number;
-  url?: string;
-  checksum?: string;
+    id: number
+    created_at?: number
+    games?: number[] | Game[]
+    name?: string
+    slug?: string
+    updated_at?: number
+    url?: string
+    checksum?: string
 }
 
 export interface Game {
-  id: number;
-  age_ratings?: number[] | AgeRating[];
-  aggregated_rating?: number;
-  aggregated_rating_count?: number;
-  alternative_names?: number[] | AlternativeName[];
-  artworks?: number[] | Artwork[];
-  bundles?: number[] | Game[];
-  /** @deprecated Marked deprecated in the official IGDB schema. */
-  category?: GameCategoryEnum;
-  /** @deprecated Marked deprecated in the official IGDB schema. */
-  collection?: number | Collection;
-  cover?: number | Cover;
-  created_at?: number;
-  dlcs?: number[] | Game[];
-  expansions?: number[] | Game[];
-  external_games?: number[] | ExternalGame[];
-  first_release_date?: number;
-  /** @deprecated Marked deprecated in the official IGDB schema. */
-  follows?: number;
-  franchise?: number | Franchise;
-  franchises?: number[] | Franchise[];
-  game_engines?: number[] | GameEngine[];
-  game_modes?: number[] | GameMode[];
-  genres?: number[] | Genre[];
-  hypes?: number;
-  involved_companies?: number[] | InvolvedCompany[];
-  keywords?: number[] | Keyword[];
-  multiplayer_modes?: number[] | MultiplayerMode[];
-  name?: string;
-  parent_game?: number | Game;
-  platforms?: number[] | Platform[];
-  player_perspectives?: number[] | PlayerPerspective[];
-  rating?: number;
-  rating_count?: number;
-  release_dates?: number[] | ReleaseDate[];
-  screenshots?: number[] | Screenshot[];
-  similar_games?: number[] | Game[];
-  slug?: string;
-  standalone_expansions?: number[] | Game[];
-  /** @deprecated Marked deprecated in the official IGDB schema. */
-  status?: GameStatusEnum;
-  storyline?: string;
-  summary?: string;
-  tags?: number[];
-  themes?: number[] | Theme[];
-  total_rating?: number;
-  total_rating_count?: number;
-  updated_at?: number;
-  url?: string;
-  version_parent?: number | Game;
-  version_title?: string;
-  videos?: number[] | GameVideo[];
-  websites?: number[] | Website[];
-  checksum?: string;
-  remakes?: number[] | Game[];
-  remasters?: number[] | Game[];
-  expanded_games?: number[] | Game[];
-  ports?: number[] | Game[];
-  forks?: number[] | Game[];
-  language_supports?: number[] | LanguageSupport[];
-  game_localizations?: number[] | GameLocalization[];
-  collections?: number[] | Collection[];
-  game_status?: number | GameStatus;
-  game_type?: number | GameType;
-  executables?: number[] | Executable[];
+    id: number
+    age_ratings?: number[] | AgeRating[]
+    aggregated_rating?: number
+    aggregated_rating_count?: number
+    alternative_names?: number[] | AlternativeName[]
+    artworks?: number[] | Artwork[]
+    bundles?: number[] | Game[]
+    /** @deprecated Marked deprecated in the official IGDB schema. */
+    category?: GameCategoryEnum
+    /** @deprecated Marked deprecated in the official IGDB schema. */
+    collection?: number | Collection
+    cover?: number | Cover
+    created_at?: number
+    dlcs?: number[] | Game[]
+    expansions?: number[] | Game[]
+    external_games?: number[] | ExternalGame[]
+    first_release_date?: number
+    /** @deprecated Marked deprecated in the official IGDB schema. */
+    follows?: number
+    franchise?: number | Franchise
+    franchises?: number[] | Franchise[]
+    game_engines?: number[] | GameEngine[]
+    game_modes?: number[] | GameMode[]
+    genres?: number[] | Genre[]
+    hypes?: number
+    involved_companies?: number[] | InvolvedCompany[]
+    keywords?: number[] | Keyword[]
+    multiplayer_modes?: number[] | MultiplayerMode[]
+    name?: string
+    parent_game?: number | Game
+    platforms?: number[] | Platform[]
+    player_perspectives?: number[] | PlayerPerspective[]
+    rating?: number
+    rating_count?: number
+    release_dates?: number[] | ReleaseDate[]
+    screenshots?: number[] | Screenshot[]
+    similar_games?: number[] | Game[]
+    slug?: string
+    standalone_expansions?: number[] | Game[]
+    /** @deprecated Marked deprecated in the official IGDB schema. */
+    status?: GameStatusEnum
+    storyline?: string
+    summary?: string
+    tags?: number[]
+    themes?: number[] | Theme[]
+    total_rating?: number
+    total_rating_count?: number
+    updated_at?: number
+    url?: string
+    version_parent?: number | Game
+    version_title?: string
+    videos?: number[] | GameVideo[]
+    websites?: number[] | Website[]
+    checksum?: string
+    remakes?: number[] | Game[]
+    remasters?: number[] | Game[]
+    expanded_games?: number[] | Game[]
+    ports?: number[] | Game[]
+    forks?: number[] | Game[]
+    language_supports?: number[] | LanguageSupport[]
+    game_localizations?: number[] | GameLocalization[]
+    collections?: number[] | Collection[]
+    game_status?: number | GameStatus
+    game_type?: number | GameType
+    executables?: number[] | Executable[]
 }
 
 /** @internal Present in the official schema; no documented public endpoint. */
 export interface GameContentSafetyRating {
-  id: number;
-  game?: number | Game;
-  content_safety_rating_dimension?: number | ContentSafetyRatingDimension;
-  content_safety_rating?: number | ContentSafetyRating;
-  created_at?: number;
-  updated_at?: number;
-  checksum?: string;
+    id: number
+    game?: number | Game
+    content_safety_rating_dimension?: number | ContentSafetyRatingDimension
+    content_safety_rating?: number | ContentSafetyRating
+    created_at?: number
+    updated_at?: number
+    checksum?: string
 }
 
 export interface GameEngine {
-  id: number;
-  companies?: number[] | Company[];
-  created_at?: number;
-  description?: string;
-  logo?: number | GameEngineLogo;
-  name?: string;
-  platforms?: number[] | Platform[];
-  slug?: string;
-  updated_at?: number;
-  url?: string;
-  checksum?: string;
+    id: number
+    companies?: number[] | Company[]
+    created_at?: number
+    description?: string
+    logo?: number | GameEngineLogo
+    name?: string
+    platforms?: number[] | Platform[]
+    slug?: string
+    updated_at?: number
+    url?: string
+    checksum?: string
 }
 
 export interface GameEngineLogo {
-  id: number;
-  alpha_channel?: boolean;
-  animated?: boolean;
-  height?: number;
-  image_id?: string;
-  url?: string;
-  width?: number;
-  checksum?: string;
+    id: number
+    alpha_channel?: boolean
+    animated?: boolean
+    height?: number
+    image_id?: string
+    url?: string
+    width?: number
+    checksum?: string
 }
 
 export interface GameLocalization {
-  id: number;
-  name?: string;
-  cover?: number | Cover;
-  game?: number | Game;
-  region?: number | Region;
-  created_at?: number;
-  updated_at?: number;
-  checksum?: string;
+    id: number
+    name?: string
+    cover?: number | Cover
+    game?: number | Game
+    region?: number | Region
+    created_at?: number
+    updated_at?: number
+    checksum?: string
 }
 
 export interface GameMode {
-  id: number;
-  created_at?: number;
-  name?: string;
-  slug?: string;
-  updated_at?: number;
-  url?: string;
-  checksum?: string;
+    id: number
+    created_at?: number
+    name?: string
+    slug?: string
+    updated_at?: number
+    url?: string
+    checksum?: string
 }
 
 export interface GameReleaseFormat {
-  id: number;
-  format?: string;
-  created_at?: number;
-  updated_at?: number;
-  checksum?: string;
+    id: number
+    format?: string
+    created_at?: number
+    updated_at?: number
+    checksum?: string
 }
 
 export interface GameStatus {
-  id: number;
-  status?: string;
-  created_at?: number;
-  updated_at?: number;
-  checksum?: string;
+    id: number
+    status?: string
+    created_at?: number
+    updated_at?: number
+    checksum?: string
 }
 
 export interface GameTimeToBeat {
-  id: number;
-  game_id?: number;
-  hastily?: number;
-  normally?: number;
-  completely?: number;
-  count?: number;
-  created_at?: number;
-  updated_at?: number;
-  checksum?: string;
+    id: number
+    game_id?: number
+    hastily?: number
+    normally?: number
+    completely?: number
+    count?: number
+    created_at?: number
+    updated_at?: number
+    checksum?: string
 }
 
 export interface GameType {
-  id: number;
-  type?: string;
-  created_at?: number;
-  updated_at?: number;
-  checksum?: string;
+    id: number
+    type?: string
+    created_at?: number
+    updated_at?: number
+    checksum?: string
 }
 
 export interface GameVersion {
-  id: number;
-  created_at?: number;
-  features?: number[] | GameVersionFeature[];
-  game?: number | Game;
-  games?: number[] | Game[];
-  updated_at?: number;
-  url?: string;
-  checksum?: string;
+    id: number
+    created_at?: number
+    features?: number[] | GameVersionFeature[]
+    game?: number | Game
+    games?: number[] | Game[]
+    updated_at?: number
+    url?: string
+    checksum?: string
 }
 
 export interface GameVersionFeature {
-  id: number;
-  category?: GameVersionFeatureCategoryEnum;
-  description?: string;
-  position?: number;
-  title?: string;
-  values?: number[] | GameVersionFeatureValue[];
-  checksum?: string;
+    id: number
+    category?: GameVersionFeatureCategoryEnum
+    description?: string
+    position?: number
+    title?: string
+    values?: number[] | GameVersionFeatureValue[]
+    checksum?: string
 }
 
 export interface GameVersionFeatureValue {
-  id: number;
-  game?: number | Game;
-  game_feature?: number | GameVersionFeature;
-  included_feature?: GameVersionFeatureValueIncludedFeatureEnum;
-  note?: string;
-  checksum?: string;
+    id: number
+    game?: number | Game
+    game_feature?: number | GameVersionFeature
+    included_feature?: GameVersionFeatureValueIncludedFeatureEnum
+    note?: string
+    checksum?: string
 }
 
 export interface GameVideo {
-  id: number;
-  game?: number | Game;
-  name?: string;
-  video_id?: string;
-  checksum?: string;
+    id: number
+    game?: number | Game
+    name?: string
+    video_id?: string
+    checksum?: string
 }
 
 export interface Genre {
-  id: number;
-  created_at?: number;
-  name?: string;
-  slug?: string;
-  updated_at?: number;
-  url?: string;
-  checksum?: string;
+    id: number
+    created_at?: number
+    name?: string
+    slug?: string
+    updated_at?: number
+    url?: string
+    checksum?: string
 }
 
 export interface ImageType {
-  id: number;
-  name?: string;
-  created_at?: number;
-  updated_at?: number;
-  checksum?: string;
+    id: number
+    name?: string
+    created_at?: number
+    updated_at?: number
+    checksum?: string
 }
 
 export interface InvolvedCompany {
-  id: number;
-  company?: number | Company;
-  created_at?: number;
-  developer?: boolean;
-  game?: number | Game;
-  porting?: boolean;
-  publisher?: boolean;
-  supporting?: boolean;
-  updated_at?: number;
-  checksum?: string;
+    id: number
+    company?: number | Company
+    created_at?: number
+    developer?: boolean
+    game?: number | Game
+    porting?: boolean
+    publisher?: boolean
+    supporting?: boolean
+    updated_at?: number
+    checksum?: string
 }
 
 export interface Keyword {
-  id: number;
-  created_at?: number;
-  name?: string;
-  slug?: string;
-  updated_at?: number;
-  url?: string;
-  checksum?: string;
+    id: number
+    created_at?: number
+    name?: string
+    slug?: string
+    updated_at?: number
+    url?: string
+    checksum?: string
 }
 
 export interface Language {
-  id: number;
-  name?: string;
-  native_name?: string;
-  locale?: string;
-  created_at?: number;
-  updated_at?: number;
-  checksum?: string;
+    id: number
+    name?: string
+    native_name?: string
+    locale?: string
+    created_at?: number
+    updated_at?: number
+    checksum?: string
 }
 
 export interface LanguageSupport {
-  id: number;
-  game?: number | Game;
-  language?: number | Language;
-  language_support_type?: number | LanguageSupportType;
-  created_at?: number;
-  updated_at?: number;
-  checksum?: string;
+    id: number
+    game?: number | Game
+    language?: number | Language
+    language_support_type?: number | LanguageSupportType
+    created_at?: number
+    updated_at?: number
+    checksum?: string
 }
 
 export interface LanguageSupportType {
-  id: number;
-  name?: string;
-  created_at?: number;
-  updated_at?: number;
-  checksum?: string;
+    id: number
+    name?: string
+    created_at?: number
+    updated_at?: number
+    checksum?: string
 }
 
 export interface Logo {
-  id: number;
-  alpha_channel?: boolean;
-  animated?: boolean;
-  game?: number | Game;
-  height?: number;
-  image_id?: string;
-  url?: string;
-  width?: number;
-  checksum?: string;
-  image_type?: number | ImageType;
+    id: number
+    alpha_channel?: boolean
+    animated?: boolean
+    game?: number | Game
+    height?: number
+    image_id?: string
+    url?: string
+    width?: number
+    checksum?: string
+    image_type?: number | ImageType
 }
 
 export interface MultiplayerMode {
-  id: number;
-  campaigncoop?: boolean;
-  dropin?: boolean;
-  game?: number | Game;
-  lancoop?: boolean;
-  offlinecoop?: boolean;
-  offlinecoopmax?: number;
-  offlinemax?: number;
-  onlinecoop?: boolean;
-  onlinecoopmax?: number;
-  onlinemax?: number;
-  platform?: number | Platform;
-  splitscreen?: boolean;
-  splitscreenonline?: boolean;
-  checksum?: string;
+    id: number
+    campaigncoop?: boolean
+    dropin?: boolean
+    game?: number | Game
+    lancoop?: boolean
+    offlinecoop?: boolean
+    offlinecoopmax?: number
+    offlinemax?: number
+    onlinecoop?: boolean
+    onlinecoopmax?: number
+    onlinemax?: number
+    platform?: number | Platform
+    splitscreen?: boolean
+    splitscreenonline?: boolean
+    checksum?: string
 }
 
 export interface NetworkType {
-  id: number;
-  name?: string;
-  event_networks?: number[] | EventNetwork[];
-  created_at?: number;
-  updated_at?: number;
-  checksum?: string;
+    id: number
+    name?: string
+    event_networks?: number[] | EventNetwork[]
+    created_at?: number
+    updated_at?: number
+    checksum?: string
 }
 
 export interface Platform {
-  id: number;
-  abbreviation?: string;
-  alternative_name?: string;
-  /** @deprecated Marked deprecated in the official IGDB schema. */
-  category?: PlatformCategoryEnum;
-  created_at?: number;
-  generation?: number;
-  name?: string;
-  platform_logo?: number | PlatformLogo;
-  platform_family?: number | PlatformFamily;
-  slug?: string;
-  summary?: string;
-  updated_at?: number;
-  url?: string;
-  versions?: number[] | PlatformVersion[];
-  websites?: number[] | PlatformWebsite[];
-  checksum?: string;
-  platform_type?: number | PlatformType;
+    id: number
+    abbreviation?: string
+    alternative_name?: string
+    /** @deprecated Marked deprecated in the official IGDB schema. */
+    category?: PlatformCategoryEnum
+    created_at?: number
+    generation?: number
+    name?: string
+    platform_logo?: number | PlatformLogo
+    platform_family?: number | PlatformFamily
+    slug?: string
+    summary?: string
+    updated_at?: number
+    url?: string
+    versions?: number[] | PlatformVersion[]
+    websites?: number[] | PlatformWebsite[]
+    checksum?: string
+    platform_type?: number | PlatformType
 }
 
 export interface PlatformFamily {
-  id: number;
-  name?: string;
-  slug?: string;
-  checksum?: string;
+    id: number
+    name?: string
+    slug?: string
+    checksum?: string
 }
 
 export interface PlatformLogo {
-  id: number;
-  alpha_channel?: boolean;
-  animated?: boolean;
-  height?: number;
-  image_id?: string;
-  url?: string;
-  width?: number;
-  checksum?: string;
+    id: number
+    alpha_channel?: boolean
+    animated?: boolean
+    height?: number
+    image_id?: string
+    url?: string
+    width?: number
+    checksum?: string
 }
 
 export interface PlatformType {
-  id: number;
-  name?: string;
-  created_at?: number;
-  updated_at?: number;
-  checksum?: string;
+    id: number
+    name?: string
+    created_at?: number
+    updated_at?: number
+    checksum?: string
 }
 
 export interface PlatformVersion {
-  id: number;
-  companies?: number[] | PlatformVersionCompany[];
-  connectivity?: string;
-  cpu?: string;
-  graphics?: string;
-  main_manufacturer?: number | PlatformVersionCompany;
-  media?: string;
-  memory?: string;
-  name?: string;
-  os?: string;
-  output?: string;
-  platform_logo?: number | PlatformLogo;
-  platform_version_release_dates?: number[] | PlatformVersionReleaseDate[];
-  resolutions?: string;
-  slug?: string;
-  sound?: string;
-  storage?: string;
-  summary?: string;
-  url?: string;
-  checksum?: string;
+    id: number
+    companies?: number[] | PlatformVersionCompany[]
+    connectivity?: string
+    cpu?: string
+    graphics?: string
+    main_manufacturer?: number | PlatformVersionCompany
+    media?: string
+    memory?: string
+    name?: string
+    os?: string
+    output?: string
+    platform_logo?: number | PlatformLogo
+    platform_version_release_dates?: number[] | PlatformVersionReleaseDate[]
+    resolutions?: string
+    slug?: string
+    sound?: string
+    storage?: string
+    summary?: string
+    url?: string
+    checksum?: string
 }
 
 export interface PlatformVersionCompany {
-  id: number;
-  comment?: string;
-  company?: number | Company;
-  developer?: boolean;
-  manufacturer?: boolean;
-  checksum?: string;
+    id: number
+    comment?: string
+    company?: number | Company
+    developer?: boolean
+    manufacturer?: boolean
+    checksum?: string
 }
 
 export interface PlatformVersionReleaseDate {
-  id: number;
-  /** @deprecated Marked deprecated in the official IGDB schema. */
-  category?: DateFormatChangeDateCategoryEnum;
-  created_at?: number;
-  date?: number;
-  human?: string;
-  m?: number;
-  platform_version?: number | PlatformVersion;
-  /** @deprecated Marked deprecated in the official IGDB schema. */
-  region?: RegionRegionEnum;
-  updated_at?: number;
-  y?: number;
-  checksum?: string;
-  date_format?: number | DateFormat;
-  release_region?: number | ReleaseDateRegion;
+    id: number
+    /** @deprecated Marked deprecated in the official IGDB schema. */
+    category?: DateFormatChangeDateCategoryEnum
+    created_at?: number
+    date?: number
+    human?: string
+    m?: number
+    platform_version?: number | PlatformVersion
+    /** @deprecated Marked deprecated in the official IGDB schema. */
+    region?: RegionRegionEnum
+    updated_at?: number
+    y?: number
+    checksum?: string
+    date_format?: number | DateFormat
+    release_region?: number | ReleaseDateRegion
 }
 
 export interface PlatformWebsite {
-  id: number;
-  /** @deprecated Marked deprecated in the official IGDB schema. */
-  category?: WebsiteCategoryEnum;
-  trusted?: boolean;
-  url?: string;
-  checksum?: string;
-  type?: number | WebsiteType;
+    id: number
+    /** @deprecated Marked deprecated in the official IGDB schema. */
+    category?: WebsiteCategoryEnum
+    trusted?: boolean
+    url?: string
+    checksum?: string
+    type?: number | WebsiteType
 }
 
 export interface PlayerPerspective {
-  id: number;
-  created_at?: number;
-  name?: string;
-  slug?: string;
-  updated_at?: number;
-  url?: string;
-  checksum?: string;
+    id: number
+    created_at?: number
+    name?: string
+    slug?: string
+    updated_at?: number
+    url?: string
+    checksum?: string
 }
 
 export interface PopularityPrimitive {
-  id: number;
-  game_id?: number;
-  popularity_type?: number | PopularityType;
-  /** @deprecated Marked deprecated in the official IGDB schema. */
-  popularity_source?: PopularitySourcePopularitySourceEnum;
-  value?: number;
-  calculated_at?: number;
-  created_at?: number;
-  updated_at?: number;
-  checksum?: string;
-  external_popularity_source?: number | ExternalGameSource;
+    id: number
+    game_id?: number
+    popularity_type?: number | PopularityType
+    /** @deprecated Marked deprecated in the official IGDB schema. */
+    popularity_source?: PopularitySourcePopularitySourceEnum
+    value?: number
+    calculated_at?: number
+    created_at?: number
+    updated_at?: number
+    checksum?: string
+    external_popularity_source?: number | ExternalGameSource
 }
 
 export interface PopularityType {
-  id: number;
-  /** @deprecated Marked deprecated in the official IGDB schema. */
-  popularity_source?: PopularitySourcePopularitySourceEnum;
-  name?: string;
-  created_at?: number;
-  updated_at?: number;
-  checksum?: string;
-  external_popularity_source?: number | ExternalGameSource;
+    id: number
+    /** @deprecated Marked deprecated in the official IGDB schema. */
+    popularity_source?: PopularitySourcePopularitySourceEnum
+    name?: string
+    created_at?: number
+    updated_at?: number
+    checksum?: string
+    external_popularity_source?: number | ExternalGameSource
 }
 
 export interface Region {
-  id: number;
-  name?: string;
-  category?: string;
-  identifier?: string;
-  created_at?: number;
-  updated_at?: number;
-  checksum?: string;
+    id: number
+    name?: string
+    category?: string
+    identifier?: string
+    created_at?: number
+    updated_at?: number
+    checksum?: string
 }
 
 export interface ReleaseDate {
-  id: number;
-  /** @deprecated Marked deprecated in the official IGDB schema. */
-  category?: DateFormatChangeDateCategoryEnum;
-  created_at?: number;
-  date?: number;
-  game?: number | Game;
-  human?: string;
-  m?: number;
-  platform?: number | Platform;
-  /** @deprecated Marked deprecated in the official IGDB schema. */
-  region?: RegionRegionEnum;
-  updated_at?: number;
-  y?: number;
-  checksum?: string;
-  status?: number | ReleaseDateStatus;
-  date_format?: number | DateFormat;
-  release_region?: number | ReleaseDateRegion;
-  d?: number;
+    id: number
+    /** @deprecated Marked deprecated in the official IGDB schema. */
+    category?: DateFormatChangeDateCategoryEnum
+    created_at?: number
+    date?: number
+    game?: number | Game
+    human?: string
+    m?: number
+    platform?: number | Platform
+    /** @deprecated Marked deprecated in the official IGDB schema. */
+    region?: RegionRegionEnum
+    updated_at?: number
+    y?: number
+    checksum?: string
+    status?: number | ReleaseDateStatus
+    date_format?: number | DateFormat
+    release_region?: number | ReleaseDateRegion
+    d?: number
 }
 
 export interface ReleaseDateRegion {
-  id: number;
-  region?: string;
-  created_at?: number;
-  updated_at?: number;
-  checksum?: string;
+    id: number
+    region?: string
+    created_at?: number
+    updated_at?: number
+    checksum?: string
 }
 
 export interface ReleaseDateStatus {
-  id: number;
-  name?: string;
-  description?: string;
-  created_at?: number;
-  updated_at?: number;
-  checksum?: string;
+    id: number
+    name?: string
+    description?: string
+    created_at?: number
+    updated_at?: number
+    checksum?: string
 }
 
 export interface Report {
-  id: number;
-  source_item_id?: number;
-  target_item_id?: number;
-  report_type?: number | ReportType;
-  entity_type?: number | EntityType;
-  created_at?: number;
-  updated_at?: number;
-  checksum?: string;
+    id: number
+    source_item_id?: number
+    target_item_id?: number
+    report_type?: number | ReportType
+    entity_type?: number | EntityType
+    created_at?: number
+    updated_at?: number
+    checksum?: string
 }
 
 export interface ReportType {
-  id: number;
-  name?: string;
-  created_at?: number;
-  updated_at?: number;
-  checksum?: string;
+    id: number
+    name?: string
+    created_at?: number
+    updated_at?: number
+    checksum?: string
 }
 
 export interface Screenshot {
-  id: number;
-  alpha_channel?: boolean;
-  animated?: boolean;
-  game?: number | Game;
-  height?: number;
-  image_id?: string;
-  url?: string;
-  width?: number;
-  checksum?: string;
+    id: number
+    alpha_channel?: boolean
+    animated?: boolean
+    game?: number | Game
+    height?: number
+    image_id?: string
+    url?: string
+    width?: number
+    checksum?: string
 }
 
 export interface Search {
-  id: number;
-  alternative_name?: string;
-  character?: number | Character;
-  collection?: number | Collection;
-  company?: number | Company;
-  description?: string;
-  game?: number | Game;
-  name?: string;
-  platform?: number | Platform;
-  published_at?: number;
-  test_dummy?: number | TestDummy;
-  theme?: number | Theme;
-  checksum?: string;
+    id: number
+    alternative_name?: string
+    character?: number | Character
+    collection?: number | Collection
+    company?: number | Company
+    description?: string
+    game?: number | Game
+    name?: string
+    platform?: number | Platform
+    published_at?: number
+    test_dummy?: number | TestDummy
+    theme?: number | Theme
+    checksum?: string
 }
 
 /** @internal Present in the official schema; no documented public endpoint. */
 export interface TestDummy {
-  id: number;
-  bool_value?: boolean;
-  created_at?: number;
-  enum_test?: TestDummyEnumTestEnum;
-  float_value?: number;
-  game?: number | Game;
-  integer_array?: number[];
-  integer_value?: number;
-  name?: string;
-  new_integer_value?: number;
-  private?: boolean;
-  slug?: string;
-  string_array?: string[];
-  test_dummies?: number[] | TestDummy[];
-  test_dummy?: number | TestDummy;
-  updated_at?: number;
-  url?: string;
-  checksum?: string;
+    id: number
+    bool_value?: boolean
+    created_at?: number
+    enum_test?: TestDummyEnumTestEnum
+    float_value?: number
+    game?: number | Game
+    integer_array?: number[]
+    integer_value?: number
+    name?: string
+    new_integer_value?: number
+    private?: boolean
+    slug?: string
+    string_array?: string[]
+    test_dummies?: number[] | TestDummy[]
+    test_dummy?: number | TestDummy
+    updated_at?: number
+    url?: string
+    checksum?: string
 }
 
 export interface Theme {
-  id: number;
-  created_at?: number;
-  name?: string;
-  slug?: string;
-  updated_at?: number;
-  url?: string;
-  checksum?: string;
+    id: number
+    created_at?: number
+    name?: string
+    slug?: string
+    updated_at?: number
+    url?: string
+    checksum?: string
 }
 
 export interface Website {
-  id: number;
-  /** @deprecated Marked deprecated in the official IGDB schema. */
-  category?: WebsiteCategoryEnum;
-  game?: number | Game;
-  trusted?: boolean;
-  url?: string;
-  checksum?: string;
-  type?: number | WebsiteType;
+    id: number
+    /** @deprecated Marked deprecated in the official IGDB schema. */
+    category?: WebsiteCategoryEnum
+    game?: number | Game
+    trusted?: boolean
+    url?: string
+    checksum?: string
+    type?: number | WebsiteType
 }
 
 export interface WebsiteType {
-  id: number;
-  type?: string;
-  created_at?: number;
-  updated_at?: number;
-  checksum?: string;
+    id: number
+    type?: string
+    created_at?: number
+    updated_at?: number
+    checksum?: string
 }
 
 /** Officially documented IGDB v4 endpoints and their JSON entity types. */
 export interface EndpointMap {
-  age_ratings: AgeRating;
-  age_rating_categories: AgeRatingCategory;
-  age_rating_content_descriptions: AgeRatingContentDescription;
-  age_rating_content_description_types: AgeRatingContentDescriptionType;
-  age_rating_content_descriptions_v2: AgeRatingContentDescriptionV2;
-  age_rating_organizations: AgeRatingOrganization;
-  alternative_names: AlternativeName;
-  artworks: Artwork;
-  artwork_types: ArtworkType;
-  characters: Character;
-  character_genders: CharacterGender;
-  character_mug_shots: CharacterMugShot;
-  character_species: CharacterSpecie;
-  collections: Collection;
-  collection_memberships: CollectionMembership;
-  collection_membership_types: CollectionMembershipType;
-  collection_relations: CollectionRelation;
-  collection_relation_types: CollectionRelationType;
-  collection_types: CollectionType;
-  companies: Company;
-  company_logos: CompanyLogo;
-  company_sizes: CompanySize;
-  company_statuses: CompanyStatus;
-  company_types: CompanyType;
-  company_type_histories: CompanyTypeHistory;
-  company_websites: CompanyWebsite;
-  covers: Cover;
-  date_formats: DateFormat;
-  entity_types: EntityType;
-  events: Event;
-  event_logos: EventLogo;
-  event_networks: EventNetwork;
-  executables: Executable;
-  external_games: ExternalGame;
-  external_game_sources: ExternalGameSource;
-  franchises: Franchise;
-  games: Game;
-  game_engines: GameEngine;
-  game_engine_logos: GameEngineLogo;
-  game_localizations: GameLocalization;
-  game_modes: GameMode;
-  game_release_formats: GameReleaseFormat;
-  game_statuses: GameStatus;
-  game_time_to_beats: GameTimeToBeat;
-  game_types: GameType;
-  game_versions: GameVersion;
-  game_version_features: GameVersionFeature;
-  game_version_feature_values: GameVersionFeatureValue;
-  game_videos: GameVideo;
-  genres: Genre;
-  image_types: ImageType;
-  keywords: Keyword;
-  involved_companies: InvolvedCompany;
-  languages: Language;
-  language_supports: LanguageSupport;
-  language_support_types: LanguageSupportType;
-  logos: Logo;
-  multiplayer_modes: MultiplayerMode;
-  network_types: NetworkType;
-  platforms: Platform;
-  platform_families: PlatformFamily;
-  platform_logos: PlatformLogo;
-  platform_types: PlatformType;
-  platform_versions: PlatformVersion;
-  platform_version_companies: PlatformVersionCompany;
-  platform_version_release_dates: PlatformVersionReleaseDate;
-  platform_websites: PlatformWebsite;
-  player_perspectives: PlayerPerspective;
-  popularity_primitives: PopularityPrimitive;
-  popularity_types: PopularityType;
-  regions: Region;
-  release_dates: ReleaseDate;
-  release_date_regions: ReleaseDateRegion;
-  release_date_statuses: ReleaseDateStatus;
-  reports: Report;
-  report_types: ReportType;
-  screenshots: Screenshot;
-  search: Search;
-  themes: Theme;
-  websites: Website;
-  website_types: WebsiteType;
+    age_ratings: AgeRating
+    age_rating_categories: AgeRatingCategory
+    age_rating_content_descriptions: AgeRatingContentDescription
+    age_rating_content_description_types: AgeRatingContentDescriptionType
+    age_rating_content_descriptions_v2: AgeRatingContentDescriptionV2
+    age_rating_organizations: AgeRatingOrganization
+    alternative_names: AlternativeName
+    artworks: Artwork
+    artwork_types: ArtworkType
+    characters: Character
+    character_genders: CharacterGender
+    character_mug_shots: CharacterMugShot
+    character_species: CharacterSpecie
+    collections: Collection
+    collection_memberships: CollectionMembership
+    collection_membership_types: CollectionMembershipType
+    collection_relations: CollectionRelation
+    collection_relation_types: CollectionRelationType
+    collection_types: CollectionType
+    companies: Company
+    company_logos: CompanyLogo
+    company_sizes: CompanySize
+    company_statuses: CompanyStatus
+    company_types: CompanyType
+    company_type_histories: CompanyTypeHistory
+    company_websites: CompanyWebsite
+    covers: Cover
+    date_formats: DateFormat
+    entity_types: EntityType
+    events: Event
+    event_logos: EventLogo
+    event_networks: EventNetwork
+    executables: Executable
+    external_games: ExternalGame
+    external_game_sources: ExternalGameSource
+    franchises: Franchise
+    games: Game
+    game_engines: GameEngine
+    game_engine_logos: GameEngineLogo
+    game_localizations: GameLocalization
+    game_modes: GameMode
+    game_release_formats: GameReleaseFormat
+    game_statuses: GameStatus
+    game_time_to_beats: GameTimeToBeat
+    game_types: GameType
+    game_versions: GameVersion
+    game_version_features: GameVersionFeature
+    game_version_feature_values: GameVersionFeatureValue
+    game_videos: GameVideo
+    genres: Genre
+    image_types: ImageType
+    keywords: Keyword
+    involved_companies: InvolvedCompany
+    languages: Language
+    language_supports: LanguageSupport
+    language_support_types: LanguageSupportType
+    logos: Logo
+    multiplayer_modes: MultiplayerMode
+    network_types: NetworkType
+    platforms: Platform
+    platform_families: PlatformFamily
+    platform_logos: PlatformLogo
+    platform_types: PlatformType
+    platform_versions: PlatformVersion
+    platform_version_companies: PlatformVersionCompany
+    platform_version_release_dates: PlatformVersionReleaseDate
+    platform_websites: PlatformWebsite
+    player_perspectives: PlayerPerspective
+    popularity_primitives: PopularityPrimitive
+    popularity_types: PopularityType
+    regions: Region
+    release_dates: ReleaseDate
+    release_date_regions: ReleaseDateRegion
+    release_date_statuses: ReleaseDateStatus
+    reports: Report
+    report_types: ReportType
+    screenshots: Screenshot
+    search: Search
+    themes: Theme
+    websites: Website
+    website_types: WebsiteType
 }
 
-export type Endpoint = keyof EndpointMap;
+export type Endpoint = keyof EndpointMap

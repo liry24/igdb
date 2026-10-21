@@ -1,113 +1,113 @@
 name: CI
 
 on:
-  push:
-    branches: [main]
-  pull_request:
-  merge_group:
-  workflow_dispatch:
+    push:
+        branches: [main]
+    pull_request:
+    merge_group:
+    workflow_dispatch:
 
 permissions: {}
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.number || github.sha }}
-  cancel-in-progress: ${{ github.event_name != 'push' }}
+    group: ${{ github.workflow }}-${{ github.event.number || github.sha }}
+    cancel-in-progress: ${{ github.event_name != 'push' }}
 
 jobs:
-  build:
-    permissions:
-      contents: read
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: ./.github/actions/setup
-      - run: upm run schema:check
-      - run: upm run build
-      - run: upm run typecheck:package
-      - name: Pack and verify one consumer archive
-        run: |
-          node scripts/verify-package.ts --prepare
-          npm pack --ignore-scripts --pack-destination .package-check
-          node --experimental-vm-modules scripts/verify-package.ts --keep
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
-        with:
-          name: igdb-packed
-          path: .package-check
-          include-hidden-files: true
-          if-no-files-found: error
-          retention-days: 7
+    build:
+        permissions:
+            contents: read
+        runs-on: ubuntu-latest
+        timeout-minutes: 15
+        steps:
+            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  persist-credentials: false
+            - uses: ./.github/actions/setup
+            - run: upm run schema:check
+            - run: upm run build
+            - run: upm run typecheck:package
+            - name: Pack and verify one consumer archive
+              run: |
+                  node scripts/verify-package.ts --prepare
+                  npm pack --ignore-scripts --pack-destination .package-check
+                  node --experimental-vm-modules scripts/verify-package.ts --keep
+            - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+              with:
+                  name: igdb-packed
+                  path: .package-check
+                  include-hidden-files: true
+                  if-no-files-found: error
+                  retention-days: 7
 
-  typecheck:
-    permissions:
-      contents: read
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: ./.github/actions/setup
-      - run: upm run typecheck
+    typecheck:
+        permissions:
+            contents: read
+        runs-on: ubuntu-latest
+        timeout-minutes: 15
+        steps:
+            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  persist-credentials: false
+            - uses: ./.github/actions/setup
+            - run: upm run typecheck
 
-  lint:
-    permissions:
-      contents: read
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: ./.github/actions/setup
-      - run: upm run format:check
-      - run: upm run lint
+    lint:
+        permissions:
+            contents: read
+        runs-on: ubuntu-latest
+        timeout-minutes: 15
+        steps:
+            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  persist-credentials: false
+            - uses: ./.github/actions/setup
+            - run: upm run format:check
+            - run: upm run lint
 
-  unit:
-    permissions:
-      contents: read
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: ./.github/actions/setup
-      - run: upm run test
+    unit:
+        permissions:
+            contents: read
+        runs-on: ubuntu-latest
+        timeout-minutes: 15
+        steps:
+            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  persist-credentials: false
+            - uses: ./.github/actions/setup
+            - run: upm run test
 
-  test-consumer:
-    permissions:
-      contents: read
-    needs: build
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, windows-latest]
-        node: [22, 24]
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: ${{ matrix.node }}
-          package-manager-cache: false
-      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
-        with:
-          name: igdb-packed
-          path: .package-check
-      - name: Verify and run the same archive without development dependencies
-        run: node --experimental-vm-modules scripts/verify-package.ts --consumer
+    test-consumer:
+        permissions:
+            contents: read
+        needs: build
+        strategy:
+            fail-fast: false
+            matrix:
+                os: [ubuntu-latest, windows-latest]
+                node: [22, 24]
+        runs-on: ${{ matrix.os }}
+        timeout-minutes: 10
+        steps:
+            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  persist-credentials: false
+            - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+              with:
+                  node-version: ${{ matrix.node }}
+                  package-manager-cache: false
+            - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
+              with:
+                  name: igdb-packed
+                  path: .package-check
+            - name: Verify and run the same archive without development dependencies
+              run: node --experimental-vm-modules scripts/verify-package.ts --consumer
 
-  ci-ok:
-    if: always()
-    needs: [build, typecheck, lint, unit, test-consumer]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Require blocking jobs
-        env:
-          NEEDS: ${{ toJSON(needs) }}
-        run: jq -e 'all(.[]; .result == "success")' <<< "$NEEDS"
+    ci-ok:
+        if: always()
+        needs: [build, typecheck, lint, unit, test-consumer]
+        runs-on: ubuntu-latest
+        steps:
+            - name: Require blocking jobs
+              env:
+                  NEEDS: ${{ toJSON(needs) }}
+              run: jq -e 'all(.[]; .result == "success")' <<< "$NEEDS"
