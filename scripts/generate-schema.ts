@@ -206,7 +206,7 @@ for (const [name, { values, deprecated }] of enums) {
 }
 for (const [name, fields] of entities) {
     if (!documentedEntities.has(name)) {
-        output.push('/** @internal Present in the official schema; no documented public endpoint. */')
+        output.push('/** @remarks Present in the official schema; no documented public endpoint. */')
     }
     output.push(`export interface ${name} {`)
     for (const field of fields) {

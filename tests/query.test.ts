@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { endpoints } from '../src/endpoints.js'
 import { and, arrayOverlaps, createIgdbClient, desc, eq, gte, IgdbError } from '../src/index.js'
@@ -6,6 +6,8 @@ import { and, arrayOverlaps, createIgdbClient, desc, eq, gte, IgdbError } from '
 function mockFetch(value: unknown = []): ReturnType<typeof vi.fn<typeof fetch>> {
     return vi.fn<typeof fetch>().mockImplementation(async () => Response.json(value))
 }
+
+afterEach(() => vi.useRealTimers())
 
 describe('fluent queries', () => {
     it('builds a filter and sort against fields that are not selected without any I/O', () => {
@@ -36,8 +38,9 @@ describe('fluent queries', () => {
         const search = base.search('Zelda').limit(10)
         const byId = base.where((g) => eq(g.id, 7)).limit(1)
 
-        await Promise.all([search.request(), byId.request(), byId.request()])
+        const pages = await Promise.all([search, byId, byId])
 
+        expect(pages).toEqual([[{ id: 7, name: 'Game' }], [{ id: 7, name: 'Game' }], [{ id: 7, name: 'Game' }]])
         expect(base.build()).toBe('fields id,name;')
         expect(search.build()).toBe('fields id,name; search "Zelda"; limit 10;')
         expect(byId.build()).toBe('fields id,name; where id = 7; limit 1;')
@@ -53,7 +56,7 @@ describe('fluent queries', () => {
         const fetch = mockFetch(data)
         const client = createIgdbClient({ clientId: 'client', accessToken: 'token', fetch })
 
-        const result = await client.query('games').fields('name', 'cover.image_id').request()
+        const result = await client.query('games').fields('name', 'cover.image_id')
 
         expect(result).toEqual(data)
         expect(fetch.mock.calls[0]?.[0]).toBe('https://api.igdb.com/v4/games')
@@ -64,6 +67,87 @@ describe('fluent queries', () => {
         expect(headers.get('Client-ID')).toBe('client')
         expect(headers.get('Authorization')).toBe('Bearer token')
         expect(headers.get('Content-Type')).toBe('text/plain')
+    })
+
+    it('fetches on every await while an execute Promise shares its result', async () => {
+        const data = [{ id: 7, name: 'Game' }]
+        const fetch = mockFetch(data)
+        const query = createIgdbClient({ clientId: 'client', accessToken: 'token', fetch })
+            .query('games')
+            .fields('name')
+
+        expect(fetch).not.toHaveBeenCalled()
+        expect(await query).toEqual(data)
+        expect(await query).toEqual(data)
+        expect(fetch).toHaveBeenCalledTimes(2)
+
+        const pending = query.execute()
+        expect(pending).toBeInstanceOf(Promise)
+        const [first, second] = await Promise.all([pending, pending])
+        expect(first).toEqual(data)
+        expect(second).toBe(first)
+        expect(fetch).toHaveBeenCalledTimes(3)
+    })
+
+    it('chains then callbacks with normal Promise fulfillment and rejection semantics', async () => {
+        const query = createIgdbClient({
+            clientId: 'client',
+            accessToken: 'token',
+            fetch: mockFetch([{ id: 7, name: 'Game' }]),
+        })
+            .query('games')
+            .fields('name')
+
+        await expect(query.then((rows) => Promise.resolve(rows[0]?.name))).resolves.toBe('Game')
+
+        const error = new Error('Consumer callback failed')
+        await expect(
+            query.then(() => {
+                throw error
+            }),
+        ).rejects.toBe(error)
+    })
+
+    it('executes when returned from an async function', async () => {
+        const data = [{ id: 7, name: 'Game' }]
+        const fetch = mockFetch(data)
+        const query = createIgdbClient({ clientId: 'client', accessToken: 'token', fetch })
+            .query('games')
+            .fields('name')
+        async function load() {
+            return query
+        }
+
+        expect(fetch).not.toHaveBeenCalled()
+        await expect(load()).resolves.toEqual(data)
+        expect(fetch).toHaveBeenCalledTimes(1)
+    })
+
+    it('forwards cancellation through execute without fetching', async () => {
+        const fetch = mockFetch()
+        const query = createIgdbClient({ clientId: 'client', accessToken: 'token', fetch }).query('games')
+        const controller = new AbortController()
+        controller.abort()
+
+        await expect(query.execute({ signal: controller.signal })).rejects.toMatchObject({
+            code: 'ABORTED',
+            phase: 'request',
+        })
+        expect(fetch).not.toHaveBeenCalled()
+    })
+
+    it('uses a per-execution timeout in place of the client default', async () => {
+        vi.useFakeTimers()
+        const fetch = vi.fn<typeof globalThis.fetch>(() => new Promise(() => {}))
+        const query = createIgdbClient({ clientId: 'client', accessToken: 'token', timeoutMs: 1000, fetch }).query(
+            'games',
+        )
+        const rejection = query.execute({ timeoutMs: 20 }).catch((cause: unknown) => cause)
+
+        await vi.advanceTimersByTimeAsync(20)
+        expect(await rejection).toMatchObject({ code: 'TIMEOUT', phase: 'request' })
+        expect(fetch.mock.calls[0]?.[1]?.signal?.aborted).toBe(true)
+        expect(vi.getTimerCount()).toBe(0)
     })
 
     it('supports all documented endpoints and rejects arbitrary request paths', () => {
@@ -139,7 +223,7 @@ describe('fluent queries', () => {
             accessToken: 'token',
             fetch: mockFetch(data),
         })
-        await expect(client.query('games').request()).rejects.toMatchObject({
+        await expect(Promise.resolve(client.query('games'))).rejects.toMatchObject({
             name: 'IgdbError',
             code: 'INVALID_RESPONSE',
             phase: 'request',
@@ -152,7 +236,7 @@ describe('fluent queries', () => {
             accessToken: 'token',
             fetch: mockFetch(),
         })
-        await expect(client.query('platforms').fields('name').request()).resolves.toEqual([])
+        expect(await client.query('platforms').fields('name')).toEqual([])
     })
 
     it('provides structured errors without exposing request credentials', async () => {
@@ -162,10 +246,7 @@ describe('fluent queries', () => {
                 async () => new Response('Bearer secret-token / a confidential response', { status: 403 }),
             )
         const client = createIgdbClient({ clientId: 'client', accessToken: 'secret-token', fetch })
-        const error = await client
-            .query('games')
-            .request()
-            .catch((cause: unknown) => cause)
+        const error = await client.query('games').then(undefined, (cause) => cause)
         expect(error).toBeInstanceOf(IgdbError)
         expect(error).toMatchObject({ status: 403, phase: 'request' })
         expect(String(error)).not.toContain('secret-token')

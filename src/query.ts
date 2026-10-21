@@ -26,8 +26,10 @@ const fieldPathPattern: RegExp = /^(?:\*|[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)*(?
 const searchableEndpoints = ['characters', 'collections', 'games', 'platforms', 'search', 'themes'] as const
 type SearchableEndpoint = (typeof searchableEndpoints)[number]
 
-/** A reusable, immutable query. Only request() performs network I/O. */
-export class IgdbQuery<E extends Endpoint, Selection extends string = 'id'> {
+/** A reusable, immutable query. Await it or call execute() to fetch a fresh page. */
+export class IgdbQuery<E extends Endpoint, Selection extends string = 'id'> implements PromiseLike<
+    QueryResult<E, Selection>[]
+> {
     readonly #endpoint: E
     readonly #transport: Transport
     readonly #state: QueryState
@@ -106,7 +108,7 @@ export class IgdbQuery<E extends Endpoint, Selection extends string = 'id'> {
     }
 
     /** Fetch one page. The response is not mapped or fully schema-validated. */
-    async request(options?: RequestOptions): Promise<QueryResult<E, Selection>[]> {
+    async execute(options?: RequestOptions): Promise<QueryResult<E, Selection>[]> {
         const result = await this.#transport.request(this.#endpoint, this.build(), options)
         if (
             !Array.isArray(result) ||
@@ -116,6 +118,15 @@ export class IgdbQuery<E extends Endpoint, Selection extends string = 'id'> {
         }
         // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- IGDB owns the selected entity shapes; only the response envelope is checked here.
         return result as QueryResult<E, Selection>[]
+    }
+
+    /** Execute for await and Promise-compatible consumption. Each call fetches again. */
+    // oxlint-disable-next-line unicorn/no-thenable -- Queries intentionally implement PromiseLike for direct await.
+    then<TResult1 = QueryResult<E, Selection>[], TResult2 = never>(
+        onFulfilled?: ((value: QueryResult<E, Selection>[]) => TResult1 | PromiseLike<TResult1>) | null,
+        onRejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null,
+    ): Promise<TResult1 | TResult2> {
+        return this.execute().then(onFulfilled, onRejected)
     }
 
     #with(update: Partial<QueryState>): IgdbQuery<E, Selection> {

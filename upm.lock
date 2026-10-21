@@ -2,7 +2,7 @@
   "lockfileVersion": 1,
   "root": {
     "name": "@liry24/igdb",
-    "version": "0.1.0",
+    "version": "4.0.0",
     "specs": {
       "devDependencies": {
         "@types/node": "^24.19.2",

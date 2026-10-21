@@ -20,22 +20,39 @@ import type { ValidateFields } from '../src/types.js'
 declare const client: IgdbClient
 
 const defaultQuery = client.query('games')
-expectTypeOf(defaultQuery.request()).toEqualTypeOf<Promise<{ id: number }[]>>()
+expectTypeOf(defaultQuery.execute()).toEqualTypeOf<Promise<{ id: number }[]>>()
+expectTypeOf<Awaited<typeof defaultQuery>>().toEqualTypeOf<{ id: number }[]>()
+// @ts-expect-error Queries use await or execute().
+void defaultQuery.request
 defaultQuery.search('Zelda')
 client.query('search').search('Zelda')
 // @ts-expect-error Image endpoints do not support name search.
 client.query('covers').search('Zelda')
 
 const names = defaultQuery.fields('name')
-expectTypeOf(names.request()).toEqualTypeOf<Promise<{ id: number; name?: string }[]>>()
+expectTypeOf(names.execute()).toEqualTypeOf<Promise<{ id: number; name?: string }[]>>()
+const awaitedNames = await names
+expectTypeOf(awaitedNames).toEqualTypeOf<{ id: number; name?: string }[]>()
+const mappedNames = names.then((rows) => rows.map((row) => row.name))
+expectTypeOf(mappedNames).toEqualTypeOf<Promise<(string | undefined)[]>>()
+const recoveredNames = names.then(undefined, () => 0)
+expectTypeOf(recoveredNames).toEqualTypeOf<Promise<{ id: number; name?: string }[] | number>>()
 
 const relations = defaultQuery.fields('name', 'cover', 'genres')
-expectTypeOf(relations.request()).toEqualTypeOf<
+expectTypeOf(relations.execute()).toEqualTypeOf<
     Promise<{ id: number; name?: string; cover?: number; genres?: number[] }[]>
 >()
 
 const expanded = defaultQuery.fields('name', 'cover.image_id', 'genres.name')
-expectTypeOf(expanded.request()).toEqualTypeOf<
+expectTypeOf<Awaited<typeof expanded>>().toEqualTypeOf<
+    {
+        id: number
+        name?: string
+        cover?: { id: number; image_id?: string }
+        genres?: { id: number; name?: string }[]
+    }[]
+>()
+expectTypeOf(expanded.execute()).toEqualTypeOf<
     Promise<
         {
             id: number
@@ -47,7 +64,7 @@ expectTypeOf(expanded.request()).toEqualTypeOf<
 >()
 
 const nested = defaultQuery.fields('cover.game.platforms.platform_logo.image_id')
-expectTypeOf(nested.request()).toEqualTypeOf<
+expectTypeOf(nested.execute()).toEqualTypeOf<
     Promise<
         {
             id: number
@@ -66,7 +83,7 @@ expectTypeOf(nested.request()).toEqualTypeOf<
 >()
 
 const rawAndExpanded = defaultQuery.fields('cover', 'cover.image_id')
-expectTypeOf(rawAndExpanded.request()).toEqualTypeOf<
+expectTypeOf(rawAndExpanded.execute()).toEqualTypeOf<
     Promise<{ id: number; cover?: { id: number; image_id?: string } }[]>
 >()
 
@@ -78,7 +95,7 @@ expectTypeOf<QueryResult<'games', '*' | 'cover.image_id'>['cover']>().toEqualTyp
 expectTypeOf<NonNullable<QueryResult<'games', 'cover.*'>['cover']>['game']>().toEqualTypeOf<number | undefined>()
 
 const replaced = names.fields('slug')
-expectTypeOf(replaced.request()).toEqualTypeOf<Promise<{ id: number; slug?: string }[]>>()
+expectTypeOf(replaced.execute()).toEqualTypeOf<Promise<{ id: number; slug?: string }[]>>()
 const tuple = ['name', 'cover.image_id'] as const
 defaultQuery.fields(...tuple)
 defaultQuery.fields('platforms.platform_logo.*')

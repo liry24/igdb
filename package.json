@@ -1,6 +1,6 @@
 {
     "name": "@liry24/igdb",
-    "version": "0.1.0",
+    "version": "4.0.0",
     "description": "A small, type-safe, zero-dependency IGDB API client for Node.js and Web runtimes.",
     "keywords": [
         "api",
@@ -54,7 +54,7 @@
         "test": "vitest run",
         "test:watch": "vitest",
         "deps:update": "taze major -w",
-        "pack:check": "node scripts/verify-package.ts --prepare && npm pack --ignore-scripts --pack-destination .package-check && node --experimental-vm-modules scripts/verify-package.ts",
+        "pack:check": "node scripts/verify-package.ts --prepare && npm pack --ignore-scripts --pack-destination .package-check && node --experimental-vm-modules scripts/verify-package.ts --keep",
         "prepack": "npm run build"
     },
     "devDependencies": {

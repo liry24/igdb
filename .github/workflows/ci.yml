@@ -27,10 +27,7 @@ jobs:
             - run: upm run build
             - run: upm run typecheck:package
             - name: Pack and verify one consumer archive
-              run: |
-                  node scripts/verify-package.ts --prepare
-                  npm pack --ignore-scripts --pack-destination .package-check
-                  node --experimental-vm-modules scripts/verify-package.ts --keep
+              run: upm run pack:check
             - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
               with:
                   name: igdb-packed

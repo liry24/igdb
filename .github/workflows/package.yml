@@ -11,6 +11,7 @@ concurrency:
 
 jobs:
     pack:
+        if: github.event_name == 'workflow_dispatch' && startsWith(github.ref, 'refs/tags/v')
         permissions:
             contents: read
         runs-on: ubuntu-latest
@@ -21,7 +22,14 @@ jobs:
                   persist-credentials: false
             - uses: ./.github/actions/setup
             - run: upm run check
-            - uses: danielroe/uppt/pack@6ec27140623aa835e362f866d8ab0018ab057f4d # v0.6.11
+            - id: pack
+              uses: danielroe/uppt/pack@6ec27140623aa835e362f866d8ab0018ab057f4d # v0.6.11
               with:
                   checkout: false
                   install: false
+            - name: Verify the exact package artifact
+              env:
+                  PACKED_FILES: ${{ steps.pack.outputs.files }}
+              run: |
+                  tarball=$(jq -er 'if length == 1 then .[0] else error("Expected one package tarball") end' <<< "$PACKED_FILES")
+                  IGDB_TARBALL="$RUNNER_TEMP/uppt-pack/$tarball" node --experimental-vm-modules scripts/verify-package.ts

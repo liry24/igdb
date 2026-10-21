@@ -497,7 +497,7 @@ export interface CompanyWebsite {
     type?: number | WebsiteType
 }
 
-/** @internal Present in the official schema; no documented public endpoint. */
+/** @remarks Present in the official schema; no documented public endpoint. */
 export interface ContentSafetyRating {
     id: number
     name?: string
@@ -506,7 +506,7 @@ export interface ContentSafetyRating {
     checksum?: string
 }
 
-/** @internal Present in the official schema; no documented public endpoint. */
+/** @remarks Present in the official schema; no documented public endpoint. */
 export interface ContentSafetyRatingDimension {
     id: number
     content_safety_rating?: number | ContentSafetyRating
@@ -697,7 +697,7 @@ export interface Game {
     executables?: number[] | Executable[]
 }
 
-/** @internal Present in the official schema; no documented public endpoint. */
+/** @remarks Present in the official schema; no documented public endpoint. */
 export interface GameContentSafetyRating {
     id: number
     game?: number | Game
@@ -1174,7 +1174,7 @@ export interface Search {
     checksum?: string
 }
 
-/** @internal Present in the official schema; no documented public endpoint. */
+/** @remarks Present in the official schema; no documented public endpoint. */
 export interface TestDummy {
     id: number
     bool_value?: boolean

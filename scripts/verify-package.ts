@@ -6,11 +6,16 @@ import { gunzipSync, gzipSync } from 'node:zlib'
 
 const directory = new URL('../.package-check/', import.meta.url)
 const args = process.argv.slice(2)
+const externalArchive = process.env.IGDB_TARBALL
 
 if (args.length > 1 || (args.length === 1 && !['--prepare', '--keep', '--consumer'].includes(args[0]!))) {
     throw new Error(
         'Usage: node [--experimental-vm-modules] scripts/verify-package.ts [--prepare | --keep | --consumer]',
     )
+}
+
+if (externalArchive !== undefined && args.length > 0) {
+    throw new Error('IGDB_TARBALL cannot be combined with --prepare, --keep, or --consumer')
 }
 
 function readTarText(block: Buffer, start: number, end: number): string {
@@ -46,9 +51,15 @@ function unpack(archive: Buffer): Map<string, Buffer> {
 }
 
 async function verify(): Promise<void> {
-    const archives = (await readdir(directory)).filter((name) => name.endsWith('.tgz'))
-    assert.equal(archives.length, 1, 'Expected one tarball from npm pack')
-    const archive = await readFile(new URL(archives[0]!, directory))
+    let archivePath: string | URL
+    if (externalArchive === undefined) {
+        const archives = (await readdir(directory)).filter((name) => name.endsWith('.tgz'))
+        assert.equal(archives.length, 1, 'Expected one tarball from npm pack')
+        archivePath = new URL(archives[0]!, directory)
+    } else {
+        archivePath = externalArchive
+    }
+    const archive = await readFile(archivePath)
     const sha256 = createHash('sha256').update(archive).digest('hex')
     if (args[0] === '--consumer') {
         const expectedHash = (await readFile(new URL('sha256.txt', directory), 'utf8')).trim()
@@ -68,6 +79,9 @@ async function verify(): Promise<void> {
     const manifest: unknown = JSON.parse(entries.get('package/package.json')!.toString('utf8'))
     assert(isRecord(manifest), 'The package manifest must be an object')
     assert.equal(manifest.name, '@liry24/igdb')
+    assert(typeof manifest.version === 'string', 'The package version must be a string')
+    const version = /^(0|[1-9]\d*)\./.exec(manifest.version)
+    assert(version, 'The package version must include an IGDB API major')
     assert.equal(manifest.type, 'module')
     assert.equal(manifest.sideEffects, false)
     assert.deepEqual(manifest.exports, {
@@ -91,6 +105,11 @@ async function verify(): Promise<void> {
     const runtime = entries.get('package/dist/index.js')!
     const declarations = entries.get('package/dist/index.d.ts')!
     assert(runtime.length > 0 && declarations.length > 0, 'Build output must not be empty')
+    await Promise.all(
+        ['LICENSE', 'THIRD_PARTY_NOTICES.md'].map(async (path) => {
+            assert.deepEqual(entries.get(`package/${path}`), await readFile(new URL(`../${path}`, import.meta.url)))
+        }),
+    )
 
     // No process, Buffer, require, or Node modules are available in this realm.
     // This checks standard Web APIs, not Cloudflare's full runtime integration.
@@ -123,11 +142,10 @@ async function verify(): Promise<void> {
 
     // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- The isolated build is exercised below against the source module's public contract.
     const api = module.namespace as typeof import('../src/index.js')
-    let requests = 0
+    const requestUrls: string[] = []
     const fetchMock: typeof fetch = async (input, init) => {
-        requests += 1
         const request = new Request(input, init)
-        assert.equal(request.url, 'https://api.igdb.com/v4/games')
+        requestUrls.push(request.url)
         assert.equal(request.method, 'POST')
         assert.equal(request.headers.get('Client-ID'), 'package-check')
         assert.equal(request.headers.get('Authorization'), 'Bearer package-token')
@@ -141,17 +159,23 @@ async function verify(): Promise<void> {
         accessToken: 'package-token',
         fetch: fetchMock,
     })
-    assert.equal(requests, 0, 'Client construction must not perform I/O')
-    const rows = await client
+    assert.equal(requestUrls.length, 0, 'Client construction must not perform I/O')
+    const query = client
         .query('games')
         .fields('name', 'cover.image_id')
         .where((game) => api.and(api.gte(game.rating, 80), api.arrayOverlaps(game.platforms, [6])))
         .orderBy((game) => api.desc(game.rating))
         .limit(1)
-        .request()
-    assert.equal(requests, 1)
+    assert.equal(requestUrls.length, 0, 'Query construction must not perform I/O')
+    const rows = await query
+    assert.equal(requestUrls.length, 1)
     assert.equal(rows[0]?.id, 1)
     assert.equal(rows[0]?.name, 'Package check')
+    const executed = await query.execute({ signal: new AbortController().signal, timeoutMs: 5_000 })
+    assert.equal(requestUrls.length, 2)
+    assert.equal(executed[0]?.id, 1)
+    const expectedUrl = `https://api.igdb.com/v${version[1]}/games`
+    assert.deepEqual(requestUrls, [expectedUrl, expectedUrl], 'The package major must match the IGDB API version')
 
     const report = JSON.stringify(
         {
@@ -183,6 +207,8 @@ if (args[0] === '--prepare') {
     try {
         await verify()
     } finally {
-        if (args[0] !== '--keep') await rm(directory, { recursive: true, force: true })
+        if (externalArchive === undefined && args[0] !== '--keep') {
+            await rm(directory, { recursive: true, force: true })
+        }
     }
 }

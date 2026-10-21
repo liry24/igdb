@@ -12,19 +12,24 @@ const client = createIgdbClient({
 })
 
 const endpoint: Endpoint = 'games'
-const pending = client
+const query = client
     .query(endpoint)
     .fields('name', 'cover.image_id')
     .where((game) => and(gte(game.rating, 80), arrayOverlaps(game.platforms, [6])))
     .orderBy((game) => desc(game.rating))
     .limit(1)
-    .request({ signal: new AbortController().signal })
+const rows = await query
+const pending = query.execute({ signal: new AbortController().signal })
+const mapped = query.then((page) => page.map((game) => game.name))
 
 // oxlint-disable-next-line typescript/no-unnecessary-type-parameters -- Exact type equality requires two independent generic signatures.
 type Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2 ? true : false
 type Expect<T extends true> = T
-type Row = Awaited<typeof pending>[number]
+type Row = Awaited<typeof query>[number]
 
+export type DirectAwait = Expect<Equal<typeof rows, Row[]>>
+export type ExplicitExecution = Expect<Equal<Awaited<typeof pending>, Row[]>>
+export type ThenMapping = Expect<Equal<typeof mapped, Promise<(string | undefined)[]>>>
 export type ImplicitId = Expect<Equal<Row['id'], number>>
 export type SelectedName = Expect<Equal<Row['name'], string | undefined>>
 export type PublicEntityId = Expect<Equal<Game['id'], number>>
