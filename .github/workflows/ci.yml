@@ -28,7 +28,7 @@ jobs:
             - run: upm run typecheck:package
             - name: Pack and verify one consumer archive
               run: upm run pack:check
-            - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+            - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
               with:
                   name: igdb-packed
                   path: .package-check
@@ -81,7 +81,7 @@ jobs:
             fail-fast: false
             matrix:
                 os: [ubuntu-latest, windows-latest]
-                node: [22, 24]
+                node: [22, 24, 26]
         runs-on: ${{ matrix.os }}
         timeout-minutes: 10
         steps:
@@ -92,7 +92,7 @@ jobs:
               with:
                   node-version: ${{ matrix.node }}
                   package-manager-cache: false
-            - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
+            - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
               with:
                   name: igdb-packed
                   path: .package-check

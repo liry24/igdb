@@ -104,7 +104,7 @@ async function verify(): Promise<void> {
         'bundledDependencies',
         'bundleDependencies',
     ]) {
-        const dependencies = manifest[field]
+        const dependencies: unknown = manifest[field]
         assert(
             dependencies === undefined ||
                 (dependencies !== null && typeof dependencies === 'object' && Object.keys(dependencies).length === 0),

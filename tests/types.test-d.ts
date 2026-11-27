@@ -23,7 +23,7 @@ const defaultQuery = client.query('games')
 expectTypeOf(defaultQuery.execute()).toEqualTypeOf<Promise<{ id: number }[]>>()
 expectTypeOf<Awaited<typeof defaultQuery>>().toEqualTypeOf<{ id: number }[]>()
 // @ts-expect-error Queries use await or execute().
-void defaultQuery.request
+Boolean(defaultQuery.request)
 defaultQuery.search('Zelda')
 client.query('search').search('Zelda')
 // @ts-expect-error Image endpoints do not support name search.

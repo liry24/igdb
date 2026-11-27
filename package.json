@@ -58,18 +58,18 @@
         "prepack": "npm run build"
     },
     "devDependencies": {
-        "@types/node": "^24.19.2",
-        "oxfmt": "^0.74.0",
-        "oxlint": "^1.89.0",
-        "oxlint-tsgolint": "7.0.2004",
+        "@types/node": "^26.6.11",
+        "oxfmt": "^0.80.0",
+        "oxlint": "^1.95.0",
+        "oxlint-tsgolint": "7.0.2009",
         "taze": "^21.3.0",
-        "tsdown": "^0.23.1",
-        "tsrs": "0.18.0-ts7.1.0-dev.20260929",
-        "vite": "^8.3.5",
-        "vitest": "^5.0.5"
+        "tsdown": "^0.23.7",
+        "tsrs": "7.1.0-beta.tsrs5",
+        "vite": "^8.4.0",
+        "vitest": "^5.1.2"
     },
     "engines": {
         "node": ">=22"
     },
-    "packageManager": "upm@1.5.0"
+    "packageManager": "upm@1.5.1"
 }

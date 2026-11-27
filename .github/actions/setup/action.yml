@@ -8,11 +8,11 @@ runs:
           with:
               node-version-file: .node-version
               package-manager-cache: false
-        - uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5
+        - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
           with:
               path: ${{ runner.temp }}/pm-cache
-              key: downloads-${{ runner.os }}-upm-1.5.0-${{ hashFiles('upm.lock') }}
-              restore-keys: downloads-${{ runner.os }}-upm-1.5.0-
+              key: downloads-${{ runner.os }}-upm-1.5.1-${{ hashFiles('upm.lock') }}
+              restore-keys: downloads-${{ runner.os }}-upm-1.5.1-
         - shell: bash
           env:
               UPM_STORE: ${{ runner.temp }}/pm-cache/upm
@@ -21,6 +21,6 @@ runs:
               echo "UPM_STORE=$UPM_STORE" >> "$GITHUB_ENV"
               echo "npm_config_cache=$npm_config_cache" >> "$GITHUB_ENV"
         - shell: bash
-          run: npm install --global --ignore-scripts upm@1.5.0
+          run: npm install --global --ignore-scripts upm@1.5.1
         - shell: bash
           run: upm install --frozen-lockfile
