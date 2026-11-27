@@ -1,6 +1,6 @@
 {
     "name": "@liry24/igdb",
-    "version": "4.0.0",
+    "version": "4.1.0",
     "description": "A small, type-safe, zero-dependency IGDB API client for Node.js and Web runtimes.",
     "keywords": [
         "api",
