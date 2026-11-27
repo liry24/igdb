@@ -533,4 +533,146 @@ describe('workerd-safe token cache and auth isolation', () => {
         expect(await t2.request('games', 'fields id;')).toEqual([{ id: 3 }])
         expect(fetch.mock.calls.filter(([url]) => url === tokenUrl)).toHaveLength(1)
     })
+
+    it('deduplicates key derivation, cache reads, OAuth, and cache saves across 16 concurrent dedupeAuth calls', async () => {
+        const store = new Map<string, { readonly accessToken: string; readonly expiresAt: number }>()
+        const saveGate = deferred<void>()
+        const digestSpy = vi.spyOn(globalThis.crypto.subtle, 'digest')
+        const getSpy = vi.fn<IgdbTokenCache['get']>(async (key) => store.get(key))
+        const setSpy = vi.fn<IgdbTokenCache['set']>(async (key, token) => {
+            await saveGate.promise
+            store.set(key, token)
+        })
+        const deleteSpy = vi.fn<IgdbTokenCache['delete']>(async (key) => {
+            store.delete(key)
+        })
+        const tokenCache: IgdbTokenCache = { get: getSpy, set: setSpy, delete: deleteSpy }
+
+        let authCalls = 0
+        const fetch = vi.fn<typeof globalThis.fetch>(async (url) => {
+            if (url === tokenUrl) {
+                authCalls += 1
+                return tokenResponse(`shared-${authCalls}`)
+            }
+            return Response.json([{ id: authCalls }])
+        })
+
+        const transport = createTransport({
+            clientId: 'client',
+            clientSecret: secret,
+            tokenCache,
+            dedupeAuth: true,
+            fetch,
+        })
+
+        // Launch 16 concurrent initial calls while cache.set is still pending.
+        const initial = Array.from({ length: 16 }, (_, index) => transport.request('games', `q-${index}`))
+        await vi.waitFor(() => expect(setSpy).toHaveBeenCalledTimes(1))
+
+        // A 17th caller entering while set() is still in flight must reuse the shared operation without re-authenticating.
+        const reentrant = transport.request('games', 'q-reentrant')
+        saveGate.resolve()
+
+        const results = await Promise.all([...initial, reentrant])
+        expect(results).toHaveLength(17)
+        expect(digestSpy).toHaveBeenCalledTimes(1)
+        expect(getSpy).toHaveBeenCalledTimes(1)
+        expect(authCalls).toBe(1)
+        expect(setSpy).toHaveBeenCalledTimes(1)
+    })
+
+    it('recovers after a failed shared tokenCache.set and keeps caller cancellation isolated under dedupeAuth', async () => {
+        const store = new Map<string, { readonly accessToken: string; readonly expiresAt: number }>()
+        let shouldFailSet = true
+        const saveGate = deferred<void>()
+        const tokenCache: IgdbTokenCache = {
+            get: async (key) => store.get(key),
+            set: async (key, token) => {
+                if (shouldFailSet) {
+                    shouldFailSet = false
+                    throw new Error('cache write failed')
+                }
+                await saveGate.promise
+                store.set(key, token)
+            },
+            delete: async (key) => {
+                store.delete(key)
+            },
+        }
+
+        let authCalls = 0
+        const fetch = vi.fn<typeof globalThis.fetch>(async (url) => {
+            if (url === tokenUrl) {
+                authCalls += 1
+                return tokenResponse(`token-${authCalls}`)
+            }
+            return Response.json([{ id: authCalls }])
+        })
+
+        const transport = createTransport({
+            clientId: 'client',
+            clientSecret: secret,
+            tokenCache,
+            dedupeAuth: true,
+            fetch,
+        })
+
+        await expect(transport.request('games', 'fail-save')).rejects.toThrow('cache write failed')
+        expect(authCalls).toBe(1)
+
+        // Next call recovers; cancelling one caller does not abort the shared save for the other caller.
+        const controller = new AbortController()
+        const cancelled = transport
+            .request('games', 'cancelled', { signal: controller.signal })
+            .catch((cause: unknown) => cause)
+        const surviving = transport.request('games', 'surviving')
+        await vi.waitFor(() => expect(authCalls).toBe(2))
+        controller.abort()
+        expect(await cancelled).toMatchObject({ code: 'ABORTED', phase: 'auth' })
+        saveGate.resolve()
+        expect(await surviving).toEqual([{ id: 2 }])
+        expect(authCalls).toBe(2)
+        expect(store.size).toBe(1)
+    })
+
+    it('does not evict a refreshed cached token when a late 401 arrives under dedupeAuth', async () => {
+        const inner = createMemoryTokenCache()
+        const deleteSpy = vi.fn<IgdbTokenCache['delete']>((key) => inner.delete(key))
+        const tokenCache: IgdbTokenCache = {
+            get: (key) => inner.get(key),
+            set: (key, token) => inner.set(key, token),
+            delete: deleteSpy,
+        }
+        const slow = deferred<Response>()
+        let authCalls = 0
+        const fetch = vi.fn<typeof globalThis.fetch>(async (url, init) => {
+            if (url === tokenUrl) {
+                authCalls += 1
+                return tokenResponse(authCalls === 1 ? 'old' : 'new')
+            }
+            if (new Headers(init?.headers).get('Authorization') === 'Bearer old') {
+                return init?.body === 'slow' ? slow.promise : new Response(null, { status: 401 })
+            }
+            return Response.json([{ id: 1 }])
+        })
+
+        const transport = createTransport({
+            clientId: 'client',
+            clientSecret: secret,
+            tokenCache,
+            dedupeAuth: true,
+            fetch,
+        })
+
+        const fastReq = transport.request('games', 'fast')
+        const slowReq = transport.request('games', 'slow')
+        expect(await fastReq).toEqual([{ id: 1 }])
+        expect(authCalls).toBe(2)
+        expect(deleteSpy).toHaveBeenCalledTimes(1)
+
+        slow.resolve(new Response(null, { status: 401 }))
+        expect(await slowReq).toEqual([{ id: 1 }])
+        expect(authCalls).toBe(2)
+        expect(deleteSpy).toHaveBeenCalledTimes(1)
+    })
 })
