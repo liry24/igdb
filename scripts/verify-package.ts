@@ -82,8 +82,18 @@ async function verify(): Promise<void> {
     assert(typeof manifest.version === 'string', 'The package version must be a string')
     const version = /^(0|[1-9]\d*)\./.exec(manifest.version)
     assert(version, 'The package version must include an IGDB API major')
+    const githubRef = process.env.GITHUB_REF
+    if (externalArchive !== undefined && githubRef?.startsWith('refs/tags/v')) {
+        assert.equal(
+            manifest.version,
+            githubRef.slice('refs/tags/v'.length),
+            'The package version must match the release tag',
+        )
+    }
     assert.equal(manifest.type, 'module')
     assert.equal(manifest.sideEffects, false)
+    assert(isRecord(manifest.publishConfig), 'The package manifest must declare publishConfig')
+    assert.equal(manifest.publishConfig.access, 'public')
     assert.deepEqual(manifest.exports, {
         '.': { types: './dist/index.d.ts', default: './dist/index.js' },
     })

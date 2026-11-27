@@ -64,6 +64,8 @@ upm run check
 
 Refresh the committed IGDB v4 schema snapshot and generated types with `upm run schema:update`.
 
+Releases are automated with [uppt](https://github.com/danielroe/uppt): pushes to `main` open a draft release PR, and squash-merging it tags, verifies CI and the packed tarball, and stages an npm OIDC publish. If a breaking change targets IGDB v4, edit `version` in `package.json` on the `release/v*` branch to keep major `4`.
+
 ## License
 
 [MIT](./LICENSE)

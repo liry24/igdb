@@ -1,0 +1,134 @@
+name: Release
+
+on:
+    push:
+        branches: [main, 'release/v*']
+    pull_request:
+        types: [closed]
+        branches: [main]
+    workflow_dispatch:
+        inputs:
+            prerelease:
+                description: 'Cut a prerelease instead of a normal release, e.g. `beta`, `rc`, or `0`'
+                required: false
+                default: ''
+            npm-tag:
+                description: 'npm dist-tag to publish to. Set by uppt/release for maintenance lines; leave blank otherwise'
+                required: false
+                default: ''
+
+permissions: {}
+
+jobs:
+    pr:
+        if: |
+            !github.event.repository.fork
+            && (
+              (
+                github.event_name == 'push'
+                && (
+                  github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+                  || startsWith(github.ref, 'refs/heads/release/v')
+                )
+              ) || (
+                github.event_name == 'workflow_dispatch'
+                && !startsWith(github.ref, 'refs/tags/')
+              )
+            )
+        runs-on: ubuntu-latest
+        timeout-minutes: 15
+        permissions:
+            contents: write
+            pull-requests: write
+        steps:
+            - uses: danielroe/uppt/pr@2c9a289359311b9661cc99886a71121209b89d17 # v0.6.14
+              with:
+                  token: ${{ secrets.GITHUB_TOKEN }}
+                  prerelease: ${{ inputs.prerelease }}
+
+    release:
+        if: |
+            github.event_name == 'pull_request'
+            && github.event.pull_request.merged == true
+            && startsWith(github.event.pull_request.head.ref, 'release/v')
+            && github.event.pull_request.head.repo.full_name == github.repository
+            && !github.event.repository.fork
+        runs-on: ubuntu-latest
+        timeout-minutes: 15
+        concurrency:
+            group: release-${{ github.event.pull_request.number }}
+            cancel-in-progress: false
+        permissions:
+            contents: write
+            actions: write
+        steps:
+            - uses: danielroe/uppt/release@2c9a289359311b9661cc99886a71121209b89d17 # v0.6.14
+              with:
+                  token: ${{ secrets.GITHUB_TOKEN }}
+
+    pack:
+        if: github.event_name == 'workflow_dispatch' && startsWith(github.ref, 'refs/tags/v') && !github.event.repository.fork
+        runs-on: ubuntu-latest
+        timeout-minutes: 30
+        concurrency:
+            group: pack-${{ github.ref }}
+            cancel-in-progress: false
+        permissions:
+            contents: read
+            actions: read
+        outputs:
+            files: ${{ steps.pack.outputs.files }}
+        steps:
+            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  persist-credentials: false
+            - name: Require successful CI for the tagged commit
+              env:
+                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              run: |
+                  set -euo pipefail
+                  sha=$(git rev-parse HEAD)
+                  run_id=""
+                  for attempt in {1..60}; do
+                    run_id=$(gh run list --workflow ci.yml --commit "$sha" --event push --limit 1 --json databaseId --jq '.[0].databaseId')
+                    if [[ -n "$run_id" && "$run_id" != null ]]; then break; fi
+                    sleep 5
+                  done
+                  [[ -n "$run_id" && "$run_id" != null ]]
+                  gh run watch "$run_id" --exit-status
+                  gh run view "$run_id" --json headSha,jobs | jq -e --arg sha "$sha" '.headSha == $sha and ([.jobs[] | select(.name == "ci-ok")] | length == 1 and all(.[]; .conclusion == "success"))'
+            - uses: ./.github/actions/setup
+            - id: pack
+              uses: danielroe/uppt/pack@2c9a289359311b9661cc99886a71121209b89d17 # v0.6.14
+              with:
+                  checkout: false
+                  install: false
+            - name: Verify the exact release artifact
+              env:
+                  PACKED_FILES: ${{ steps.pack.outputs.files }}
+              run: |
+                  set -euo pipefail
+                  tarball=$(jq -er 'if length == 1 then .[0] else error("Expected one release tarball") end' <<< "$PACKED_FILES")
+                  IGDB_TARBALL="$RUNNER_TEMP/uppt-pack/$tarball" node --experimental-vm-modules scripts/verify-package.ts
+
+    publish:
+        if: |
+            github.event_name == 'workflow_dispatch'
+            && startsWith(github.ref, 'refs/tags/v')
+            && !github.event.repository.fork
+            && needs.pack.outputs.files != ''
+            && needs.pack.outputs.files != '[]'
+        needs: pack
+        runs-on: ubuntu-latest
+        timeout-minutes: 15
+        concurrency:
+            group: publish-${{ github.ref }}
+            cancel-in-progress: false
+        environment: npm
+        permissions:
+            id-token: write
+        steps:
+            - uses: danielroe/uppt/publish@2c9a289359311b9661cc99886a71121209b89d17 # v0.6.14
+              with:
+                  files: ${{ needs.pack.outputs.files }}
+                  npm-tag: ${{ inputs.npm-tag }}
