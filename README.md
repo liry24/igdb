@@ -52,7 +52,7 @@ const igdb = createIgdbClient({ emulator: createIgdbEmulator() })
 const games = await igdb.query('games').fields('id', 'slug', 'name', 'cover.image_id').search('sf6').limit(10)
 ```
 
-Pass `{ data, mode: 'merge' | 'replace', aliases, delayMs, onQuery }` to customize fixtures or inject `IgdbError` failures. Using `await import('@liry24/igdb/emulator')` keeps fixtures out of production bundles.
+Pass `{ data, mode: 'merge' | 'replace', aliases, delayMs, onQuery }` to customize fixtures or inject `IgdbError` failures. Loading it with `await import('@liry24/igdb/emulator')` splits the emulator and fixtures into a separate on-demand chunk instead of bundling them into the main entry.
 
 ## Filters, sorting, and execution
 

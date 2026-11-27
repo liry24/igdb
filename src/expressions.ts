@@ -56,9 +56,9 @@ export interface CompiledOrder {
     readonly ast: OrderAst
 }
 
-const references: WeakMap<object, Reference> = new WeakMap()
-const predicates: WeakMap<object, PredicateEntry> = new WeakMap()
-const orders: WeakMap<object, OrderEntry> = new WeakMap()
+const references: WeakMap<object, Reference> = /* @__PURE__ */ new WeakMap()
+const predicates: WeakMap<object, PredicateEntry> = /* @__PURE__ */ new WeakMap()
+const orders: WeakMap<object, OrderEntry> = /* @__PURE__ */ new WeakMap()
 const fieldNamePattern: RegExp = /^[a-z][a-z0-9_]*$/
 
 function isObject(value: unknown): value is object {

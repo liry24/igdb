@@ -4,7 +4,7 @@ import type { RequestOptions } from './transport.js'
 
 export type { IgdbEmulator } from './emulator-bridge.js'
 
-const EMULATOR_TRANSPORT: symbol = Symbol.for('@liry24/igdb/emulator-transport')
+const EMULATOR_TRANSPORT: symbol = /* @__PURE__ */ Symbol.for('@liry24/igdb/emulator-transport')
 
 export type EmulatorDataset = Partial<{
     [E in Endpoint]: readonly EndpointMap[E][]
@@ -43,9 +43,22 @@ export interface IgdbEmulatorOptions {
 }
 
 type EntityRecord = Record<string, unknown>
+type TableIndex = ReadonlyMap<number, EntityRecord>
+
+interface CompiledPathStep {
+    readonly segment: string
+    readonly targetIndex: TableIndex | undefined
+}
+
+interface CompiledPath {
+    readonly singleSegment: string | undefined
+    readonly steps: readonly CompiledPathStep[]
+}
 
 interface ProjectionNode {
     wildcard: boolean
+    readonly endpoint: string | undefined
+    readonly targetIndex: TableIndex | undefined
     readonly children: Map<string, ProjectionNode>
 }
 
@@ -165,13 +178,13 @@ const builtInGames: readonly Game[] = [
     { id: 228530, slug: 'hades-ii', name: 'Hades II', platforms: [6], rating: 93 },
 ]
 
-export const defaultEmulatorDataset: Readonly<EmulatorDataset> = deepFreeze({
+export const defaultEmulatorDataset: Readonly<EmulatorDataset> = /* @__PURE__ */ deepFreeze({
     games: builtInGames,
     covers: builtInCovers,
     platforms: builtInPlatforms,
 })
 
-export const defaultEmulatorAliases: Readonly<Record<number, readonly string[]>> = deepFreeze({
+export const defaultEmulatorAliases: Readonly<Record<number, readonly string[]>> = /* @__PURE__ */ deepFreeze({
     126459: ['val'],
     114795: ['apex'],
     191692: ['sf6'],
@@ -298,41 +311,35 @@ function buildTables(
     data: EmulatorDataset | undefined,
     mode: 'merge' | 'replace',
 ): {
-    tables: Map<string, EntityRecord[]>
-    indexes: Map<string, Map<number, EntityRecord>>
+    tables: Map<string, readonly EntityRecord[]>
+    indexes: Map<string, TableIndex>
 } {
-    const tables = new Map<string, EntityRecord[]>()
     const indexes = new Map<string, Map<number, EntityRecord>>()
 
-    const ingest = (source: EmulatorDataset | undefined): void => {
+    const ingest = (source: EmulatorDataset | undefined, cloneRecords: boolean): void => {
         if (!source) return
         for (const [endpoint, records] of Object.entries(source)) {
             if (!Array.isArray(records)) continue
-            let rows = tables.get(endpoint)
             let byId = indexes.get(endpoint)
-            if (!rows || !byId) {
-                rows = []
+            if (!byId) {
                 byId = new Map()
-                tables.set(endpoint, rows)
                 indexes.set(endpoint, byId)
             }
             for (const raw of records) {
                 if (!isRecord(raw) || typeof raw.id !== 'number') continue
-                const cloned = deepClone(raw)
-                const existing = byId.get(raw.id)
-                if (existing) {
-                    const slot = rows.indexOf(existing)
-                    if (slot !== -1) rows[slot] = cloned
-                } else {
-                    rows.push(cloned)
-                }
-                byId.set(raw.id, cloned)
+                // Map preserves first-seen key order while overwriting duplicate IDs in O(1).
+                byId.set(raw.id, cloneRecords ? deepClone(raw) : raw)
             }
         }
     }
 
-    if (mode === 'merge') ingest(defaultEmulatorDataset)
-    ingest(data)
+    if (mode === 'merge') ingest(defaultEmulatorDataset, false)
+    ingest(data, true)
+
+    const tables = new Map<string, readonly EntityRecord[]>()
+    for (const [endpoint, byId] of indexes) {
+        tables.set(endpoint, [...byId.values()])
+    }
     return { tables, indexes }
 }
 
@@ -340,54 +347,77 @@ function buildAliases(
     custom: Readonly<Record<number, readonly string[]>> | undefined,
     mode: 'merge' | 'replace',
 ): Map<number, readonly string[]> {
-    const map = new Map<number, string[]>()
+    const sets = new Map<number, Set<string>>()
     const add = (source: Readonly<Record<number, readonly string[]>> | undefined): void => {
         if (!source) return
         for (const [rawId, list] of Object.entries(source)) {
             const id = Number(rawId)
             if (!Number.isSafeInteger(id) || !Array.isArray(list)) continue
-            const current = map.get(id) ?? []
-            for (const alias of list) {
-                if (typeof alias === 'string' && !current.includes(alias)) current.push(alias)
+            let current = sets.get(id)
+            if (!current) {
+                current = new Set()
+                sets.set(id, current)
             }
-            map.set(id, current)
+            for (const alias of list) {
+                if (typeof alias === 'string') current.add(alias)
+            }
         }
     }
     if (mode === 'merge') add(defaultEmulatorAliases)
     add(custom)
+
+    const map = new Map<number, readonly string[]>()
+    for (const [id, set] of sets) {
+        if (set.size > 0) map.set(id, [...set])
+    }
     return map
 }
 
-function resolveEntityById(
-    id: number,
-    targetEndpoint: string | undefined,
-    indexes: ReadonlyMap<string, ReadonlyMap<number, EntityRecord>>,
-): EntityRecord | undefined {
-    if (!targetEndpoint) return undefined
-    return indexes.get(targetEndpoint)?.get(id)
-}
-
-function resolvePathValues(
-    record: EntityRecord,
+function compilePath(
     endpoint: string,
     path: string,
     tables: ReadonlyMap<string, readonly EntityRecord[]>,
-    indexes: ReadonlyMap<string, ReadonlyMap<number, EntityRecord>>,
-): unknown[] {
+    indexes: ReadonlyMap<string, TableIndex>,
+): CompiledPath {
+    if (!path.includes('.')) {
+        return { singleSegment: path, steps: [] }
+    }
     const segments = path.split('.')
-    let currentValues: unknown[] = [record]
+    const steps: CompiledPathStep[] = []
     let currentEndpoint: string | undefined = endpoint
-
     for (let index = 0; index < segments.length; index += 1) {
         const segment = segments[index]!
         const isLast = index === segments.length - 1
+        let targetIndex: TableIndex | undefined
+        if (!isLast && currentEndpoint !== undefined) {
+            const nextEndpoint = resolveRelationEndpoint(currentEndpoint, segment, tables)
+            targetIndex = nextEndpoint !== undefined ? indexes.get(nextEndpoint) : undefined
+            currentEndpoint = nextEndpoint
+        } else {
+            currentEndpoint = undefined
+        }
+        steps.push({ segment, targetIndex })
+    }
+    return { singleSegment: undefined, steps }
+}
+
+function resolveCompiledPathValues(record: EntityRecord, path: CompiledPath): unknown[] {
+    if (path.singleSegment !== undefined) {
+        const raw: unknown = record[path.singleSegment]
+        return raw === undefined ? [] : [raw]
+    }
+    const { steps } = path
+    const lastIndex = steps.length - 1
+    let currentValues: unknown[] = [record]
+
+    for (let index = 0; index <= lastIndex; index += 1) {
+        const step = steps[index]!
+        const isLast = index === lastIndex
         const nextValues: unknown[] = []
-        const nextEndpoint: string | undefined =
-            currentEndpoint !== undefined ? resolveRelationEndpoint(currentEndpoint, segment, tables) : undefined
 
         for (const item of currentValues) {
             if (!isRecord(item)) continue
-            const raw: unknown = item[segment]
+            const raw: unknown = item[step.segment]
             if (isLast) {
                 if (raw !== undefined) nextValues.push(raw)
                 continue
@@ -396,31 +426,30 @@ function resolvePathValues(
                 for (const element of raw) {
                     if (isRecord(element)) nextValues.push(element)
                     else if (typeof element === 'number') {
-                        const resolved = resolveEntityById(element, nextEndpoint, indexes)
+                        const resolved = step.targetIndex?.get(element)
                         if (resolved) nextValues.push(resolved)
                     }
                 }
             } else if (isRecord(raw)) {
                 nextValues.push(raw)
             } else if (typeof raw === 'number') {
-                const resolved = resolveEntityById(raw, nextEndpoint, indexes)
+                const resolved = step.targetIndex?.get(raw)
                 if (resolved) nextValues.push(resolved)
             }
         }
+        if (nextValues.length === 0) return nextValues
         currentValues = nextValues
-        currentEndpoint = nextEndpoint
     }
     return currentValues
 }
 
-function normalizeLeaf(value: unknown, target: Scalar): unknown {
-    if (typeof target === 'number' && isRecord(value) && typeof value.id === 'number') {
-        return value.id
+function resolveLeaves(record: EntityRecord, path: CompiledPath): unknown[] {
+    if (path.singleSegment !== undefined) {
+        const raw: unknown = record[path.singleSegment]
+        if (raw === undefined) return []
+        return Array.isArray(raw) ? raw : [raw]
     }
-    return value
-}
-
-function flattenLeaves(values: readonly unknown[]): unknown[] {
+    const values = resolveCompiledPathValues(record, path)
     const out: unknown[] = []
     for (const value of values) {
         if (Array.isArray(value)) {
@@ -432,99 +461,193 @@ function flattenLeaves(values: readonly unknown[]): unknown[] {
     return out
 }
 
-function evalPredicate(
-    record: EntityRecord,
+function normalizeLeaf(value: unknown, allowNumericEntityId: boolean): unknown {
+    if (allowNumericEntityId && isRecord(value) && typeof value.id === 'number') {
+        return value.id
+    }
+    return value
+}
+
+function isScalar(value: unknown): value is Scalar {
+    return typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean'
+}
+
+function compilePredicate(
     endpoint: string,
     ast: PredicateAst,
     tables: ReadonlyMap<string, readonly EntityRecord[]>,
-    indexes: ReadonlyMap<string, ReadonlyMap<number, EntityRecord>>,
-): boolean {
+    indexes: ReadonlyMap<string, TableIndex>,
+): (record: EntityRecord) => boolean {
     switch (ast.kind) {
-        case 'const':
-            return ast.value
-        case 'and':
-            return ast.children.every((child) => evalPredicate(record, endpoint, child, tables, indexes))
-        case 'or':
-            return ast.children.some((child) => evalPredicate(record, endpoint, child, tables, indexes))
+        case 'const': {
+            const result = ast.value
+            return () => result
+        }
+        case 'and': {
+            const children = ast.children.map((child) => compilePredicate(endpoint, child, tables, indexes))
+            return (record) => {
+                for (const fn of children) {
+                    if (!fn(record)) return false
+                }
+                return true
+            }
+        }
+        case 'or': {
+            const children = ast.children.map((child) => compilePredicate(endpoint, child, tables, indexes))
+            return (record) => {
+                for (const fn of children) {
+                    if (fn(record)) return true
+                }
+                return false
+            }
+        }
         case 'isNull': {
-            const values = resolvePathValues(record, endpoint, ast.path, tables, indexes)
-            return values.every((value) => value === undefined || value === null)
+            const path = compilePath(endpoint, ast.path, tables, indexes)
+            if (path.singleSegment !== undefined) {
+                const segment = path.singleSegment
+                return (record) => {
+                    const value: unknown = record[segment]
+                    return value === undefined || value === null
+                }
+            }
+            return (record) => {
+                const values = resolveCompiledPathValues(record, path)
+                return values.every((value) => value === undefined || value === null)
+            }
         }
         case 'isNotNull': {
-            const values = resolvePathValues(record, endpoint, ast.path, tables, indexes)
-            return values.some((value) => value !== undefined && value !== null)
+            const path = compilePath(endpoint, ast.path, tables, indexes)
+            if (path.singleSegment !== undefined) {
+                const segment = path.singleSegment
+                return (record) => {
+                    const value: unknown = record[segment]
+                    return value !== undefined && value !== null
+                }
+            }
+            return (record) => {
+                const values = resolveCompiledPathValues(record, path)
+                return values.some((value) => value !== undefined && value !== null)
+            }
         }
         case 'compare': {
-            const leaves = flattenLeaves(resolvePathValues(record, endpoint, ast.path, tables, indexes))
+            const path = compilePath(endpoint, ast.path, tables, indexes)
             const target = ast.value
+            const allowNumericId = typeof target === 'number'
             switch (ast.op) {
                 case '=':
-                    return leaves.some((value) => normalizeLeaf(value, target) === target)
+                    return (record) =>
+                        resolveLeaves(record, path).some((value) => normalizeLeaf(value, allowNumericId) === target)
                 case '!=':
-                    return (
-                        leaves.length > 0 &&
-                        leaves.every(
-                            (value) => value !== undefined && value !== null && normalizeLeaf(value, target) !== target,
+                    return (record) => {
+                        const leaves = resolveLeaves(record, path)
+                        return (
+                            leaves.length > 0 &&
+                            leaves.every(
+                                (value) =>
+                                    value !== undefined &&
+                                    value !== null &&
+                                    normalizeLeaf(value, allowNumericId) !== target,
+                            )
                         )
-                    )
+                    }
                 case '>': {
-                    if (typeof target !== 'number') return false
-                    return leaves.some((value) => {
-                        const normalized = normalizeLeaf(value, target)
-                        return typeof normalized === 'number' && normalized > target
-                    })
+                    if (typeof target !== 'number') return () => false
+                    return (record) =>
+                        resolveLeaves(record, path).some((value) => {
+                            const normalized = normalizeLeaf(value, true)
+                            return typeof normalized === 'number' && normalized > target
+                        })
                 }
                 case '>=': {
-                    if (typeof target !== 'number') return false
-                    return leaves.some((value) => {
-                        const normalized = normalizeLeaf(value, target)
-                        return typeof normalized === 'number' && normalized >= target
-                    })
+                    if (typeof target !== 'number') return () => false
+                    return (record) =>
+                        resolveLeaves(record, path).some((value) => {
+                            const normalized = normalizeLeaf(value, true)
+                            return typeof normalized === 'number' && normalized >= target
+                        })
                 }
                 case '<': {
-                    if (typeof target !== 'number') return false
-                    return leaves.some((value) => {
-                        const normalized = normalizeLeaf(value, target)
-                        return typeof normalized === 'number' && normalized < target
-                    })
+                    if (typeof target !== 'number') return () => false
+                    return (record) =>
+                        resolveLeaves(record, path).some((value) => {
+                            const normalized = normalizeLeaf(value, true)
+                            return typeof normalized === 'number' && normalized < target
+                        })
                 }
                 case '<=': {
-                    if (typeof target !== 'number') return false
-                    return leaves.some((value) => {
-                        const normalized = normalizeLeaf(value, target)
-                        return typeof normalized === 'number' && normalized <= target
-                    })
+                    if (typeof target !== 'number') return () => false
+                    return (record) =>
+                        resolveLeaves(record, path).some((value) => {
+                            const normalized = normalizeLeaf(value, true)
+                            return typeof normalized === 'number' && normalized <= target
+                        })
                 }
                 default:
-                    return false
+                    return () => false
             }
         }
         case 'in': {
-            const leaves = flattenLeaves(resolvePathValues(record, endpoint, ast.path, tables, indexes))
-            return leaves.some((value) => ast.values.some((target) => normalizeLeaf(value, target) === target))
+            const path = compilePath(endpoint, ast.path, tables, indexes)
+            const targetSet = new Set<Scalar>(ast.values)
+            const hasNumericTarget = ast.values.some((value) => typeof value === 'number')
+            return (record) =>
+                resolveLeaves(record, path).some((value) => {
+                    const normalized = normalizeLeaf(value, hasNumericTarget)
+                    return isScalar(normalized) && targetSet.has(normalized)
+                })
         }
         case 'notIn': {
-            const leaves = flattenLeaves(resolvePathValues(record, endpoint, ast.path, tables, indexes))
-            return (
-                leaves.length > 0 &&
-                leaves.every(
-                    (value) =>
-                        value !== undefined &&
-                        value !== null &&
-                        !ast.values.some((target) => normalizeLeaf(value, target) === target),
+            const path = compilePath(endpoint, ast.path, tables, indexes)
+            const targetSet = new Set<Scalar>(ast.values)
+            const hasNumericTarget = ast.values.some((value) => typeof value === 'number')
+            return (record) => {
+                const leaves = resolveLeaves(record, path)
+                return (
+                    leaves.length > 0 &&
+                    leaves.every((value) => {
+                        if (value === undefined || value === null) return false
+                        const normalized = normalizeLeaf(value, hasNumericTarget)
+                        return !isScalar(normalized) || !targetSet.has(normalized)
+                    })
                 )
-            )
+            }
         }
         case 'arrayContains': {
-            const leaves = flattenLeaves(resolvePathValues(record, endpoint, ast.path, tables, indexes))
-            return ast.values.every((target) => leaves.some((value) => normalizeLeaf(value, target) === target))
+            const path = compilePath(endpoint, ast.path, tables, indexes)
+            const targetSet = new Set<Scalar>(ast.values)
+            const requiredCount = targetSet.size
+            const hasNumericTarget = ast.values.some((value) => typeof value === 'number')
+            if (requiredCount === 1) {
+                const single = ast.values[0]!
+                return (record) =>
+                    resolveLeaves(record, path).some((value) => normalizeLeaf(value, hasNumericTarget) === single)
+            }
+            return (record) => {
+                const leaves = resolveLeaves(record, path)
+                if (leaves.length < requiredCount) return false
+                const matched = new Set<Scalar>()
+                for (const value of leaves) {
+                    const normalized = normalizeLeaf(value, hasNumericTarget)
+                    if (isScalar(normalized) && targetSet.has(normalized)) {
+                        matched.add(normalized)
+                        if (matched.size === requiredCount) return true
+                    }
+                }
+                return false
+            }
         }
         case 'arrayOverlaps': {
-            const leaves = flattenLeaves(resolvePathValues(record, endpoint, ast.path, tables, indexes))
-            return ast.values.some((target) => leaves.some((value) => normalizeLeaf(value, target) === target))
+            const path = compilePath(endpoint, ast.path, tables, indexes)
+            const targetSet = new Set<Scalar>(ast.values)
+            const hasNumericTarget = ast.values.some((value) => typeof value === 'number')
+            return (record) =>
+                resolveLeaves(record, path).some((value) => {
+                    const normalized = normalizeLeaf(value, hasNumericTarget)
+                    return isScalar(normalized) && targetSet.has(normalized)
+                })
         }
         default:
-            return false
+            return () => false
     }
 }
 
@@ -556,19 +679,31 @@ function filterAndRankBySearch(
     if (needle.length === 0) return []
     const ranked: { record: EntityRecord; score: number; id: number }[] = []
     for (const record of rows) {
-        const candidates: string[] = []
-        if (typeof record.name === 'string') candidates.push(record.name)
-        if (typeof record.slug === 'string') candidates.push(record.slug)
-        if (typeof record.alternative_name === 'string') candidates.push(record.alternative_name)
-        const id = typeof record.id === 'number' ? record.id : 0
-        const recordAliases = aliases.get(id)
-        if (recordAliases) {
-            for (const alias of recordAliases) candidates.push(alias)
-        }
         let best = Number.POSITIVE_INFINITY
-        for (const candidate of candidates) {
-            const score = searchScore(candidate, needle)
+        if (typeof record.name === 'string') {
+            const score = searchScore(record.name, needle)
             if (score < best) best = score
+        }
+        if (best > 0 && typeof record.slug === 'string') {
+            const score = searchScore(record.slug, needle)
+            if (score < best) best = score
+        }
+        if (best > 0 && typeof record.alternative_name === 'string') {
+            const score = searchScore(record.alternative_name, needle)
+            if (score < best) best = score
+        }
+        const id = typeof record.id === 'number' ? record.id : 0
+        if (best > 0) {
+            const recordAliases = aliases.get(id)
+            if (recordAliases) {
+                for (const alias of recordAliases) {
+                    const score = searchScore(alias, needle)
+                    if (score < best) {
+                        best = score
+                        if (best === 0) break
+                    }
+                }
+            }
         }
         if (Number.isFinite(best)) {
             ranked.push({ record, score: best, id })
@@ -578,24 +713,32 @@ function filterAndRankBySearch(
     return ranked.map((entry) => entry.record)
 }
 
-function extractSortKey(
-    record: EntityRecord,
-    endpoint: string,
-    order: OrderAst,
-    tables: ReadonlyMap<string, readonly EntityRecord[]>,
-    indexes: ReadonlyMap<string, ReadonlyMap<number, EntityRecord>>,
-): Scalar | undefined {
-    const leaves = flattenLeaves(resolvePathValues(record, endpoint, order.path, tables, indexes)).filter(
-        (value): value is Scalar =>
-            typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean',
-    )
-    if (leaves.length === 0) return undefined
-    if (leaves.length === 1) return leaves[0]
-    const numbers = leaves.filter((value): value is number => typeof value === 'number')
-    if (numbers.length === leaves.length) {
-        return order.direction === 'asc' ? Math.min(...numbers) : Math.max(...numbers)
+function extractSortKey(record: EntityRecord, path: CompiledPath, direction: 'asc' | 'desc'): Scalar | undefined {
+    const leaves = resolveLeaves(record, path)
+    let firstScalar: Scalar | undefined
+    let numericBest: number | undefined
+    let allNumbers = true
+    let count = 0
+
+    for (const value of leaves) {
+        if (typeof value === 'number') {
+            if (!Number.isFinite(value)) continue
+            count += 1
+            if (firstScalar === undefined) firstScalar = value
+            if (numericBest === undefined) {
+                numericBest = value
+            } else if (direction === 'asc' ? value < numericBest : value > numericBest) {
+                numericBest = value
+            }
+        } else if (typeof value === 'string' || typeof value === 'boolean') {
+            count += 1
+            allNumbers = false
+            if (firstScalar === undefined) firstScalar = value
+        }
     }
-    return leaves[0]
+    if (count === 0) return undefined
+    if (allNumbers && numericBest !== undefined) return numericBest
+    return firstScalar
 }
 
 function sortRows(
@@ -603,12 +746,13 @@ function sortRows(
     endpoint: string,
     order: OrderAst,
     tables: ReadonlyMap<string, readonly EntityRecord[]>,
-    indexes: ReadonlyMap<string, ReadonlyMap<number, EntityRecord>>,
+    indexes: ReadonlyMap<string, TableIndex>,
 ): EntityRecord[] {
+    const compiledPath = compilePath(endpoint, order.path, tables, indexes)
     const factor = order.direction === 'asc' ? 1 : -1
     const decorated = rows.map((record) => ({
         record,
-        key: extractSortKey(record, endpoint, order, tables, indexes),
+        key: extractSortKey(record, compiledPath, order.direction),
     }))
     decorated.sort((a, b) => {
         if (a.key === undefined && b.key === undefined) return 0
@@ -628,8 +772,13 @@ function sortRows(
     return decorated.map((entry) => entry.record)
 }
 
-function buildProjectionTree(fields: readonly string[]): ProjectionNode {
-    const root: ProjectionNode = { wildcard: false, children: new Map() }
+function buildProjectionTree(
+    endpoint: string,
+    fields: readonly string[],
+    tables: ReadonlyMap<string, readonly EntityRecord[]>,
+    indexes: ReadonlyMap<string, TableIndex>,
+): ProjectionNode {
+    const root: ProjectionNode = { wildcard: false, endpoint, targetIndex: undefined, children: new Map() }
     for (const path of fields) {
         const segments = path.split('.')
         let node = root
@@ -640,7 +789,14 @@ function buildProjectionTree(fields: readonly string[]): ProjectionNode {
             }
             let child = node.children.get(segment)
             if (!child) {
-                child = { wildcard: false, children: new Map() }
+                const targetEndpoint =
+                    node.endpoint !== undefined ? resolveRelationEndpoint(node.endpoint, segment, tables) : undefined
+                child = {
+                    wildcard: false,
+                    endpoint: targetEndpoint,
+                    targetIndex: targetEndpoint !== undefined ? indexes.get(targetEndpoint) : undefined,
+                    children: new Map(),
+                }
                 node.children.set(segment, child)
             }
             node = child
@@ -659,13 +815,7 @@ function collapseUnexpandedValue(value: unknown): unknown {
     return deepClone(value)
 }
 
-function projectEntity(
-    record: EntityRecord,
-    endpoint: string | undefined,
-    node: ProjectionNode,
-    tables: ReadonlyMap<string, readonly EntityRecord[]>,
-    indexes: ReadonlyMap<string, ReadonlyMap<number, EntityRecord>>,
-): EntityRecord {
+function projectEntity(record: EntityRecord, node: ProjectionNode): EntityRecord {
     const out: EntityRecord = {}
     if (typeof record.id === 'number') {
         out.id = record.id
@@ -686,23 +836,22 @@ function projectEntity(
             out[key] = collapseUnexpandedValue(raw)
             continue
         }
-        const targetEndpoint = endpoint !== undefined ? resolveRelationEndpoint(endpoint, key, tables) : undefined
         if (Array.isArray(raw)) {
             const expanded: EntityRecord[] = []
             for (const element of raw) {
                 if (isRecord(element)) {
-                    expanded.push(projectEntity(element, targetEndpoint, child, tables, indexes))
+                    expanded.push(projectEntity(element, child))
                 } else if (typeof element === 'number') {
-                    const resolved = resolveEntityById(element, targetEndpoint, indexes)
-                    if (resolved) expanded.push(projectEntity(resolved, targetEndpoint, child, tables, indexes))
+                    const resolved = child.targetIndex?.get(element)
+                    if (resolved) expanded.push(projectEntity(resolved, child))
                 }
             }
             out[key] = expanded
         } else if (isRecord(raw)) {
-            out[key] = projectEntity(raw, targetEndpoint, child, tables, indexes)
+            out[key] = projectEntity(raw, child)
         } else if (typeof raw === 'number') {
-            const resolved = resolveEntityById(raw, targetEndpoint, indexes)
-            if (resolved) out[key] = projectEntity(resolved, targetEndpoint, child, tables, indexes)
+            const resolved = child.targetIndex?.get(raw)
+            if (resolved) out[key] = projectEntity(resolved, child)
         }
     }
     return out
@@ -766,25 +915,50 @@ export function createIgdbEmulator(options: IgdbEmulatorOptions = {}): IgdbEmula
         }
         if (signal.aborted) return []
 
-        let rows: EntityRecord[] = [...(tables.get(plan.endpoint) ?? [])]
-
-        if (plan.search !== undefined) {
-            rows = filterAndRankBySearch(rows, plan.search, aliases)
-        }
-        if (plan.where !== undefined) {
-            const whereAst = plan.where
-            rows = rows.filter((record) => evalPredicate(record, plan.endpoint, whereAst, tables, indexes))
-        }
-        if (plan.orderBy !== undefined) {
-            rows = sortRows(rows, plan.endpoint, plan.orderBy, tables, indexes)
-        }
-
+        const source = tables.get(plan.endpoint)
         const offset = plan.offset ?? 0
         const limit = plan.limit ?? 10
-        const page = rows.slice(offset, offset + limit)
-        const projection = buildProjectionTree(plan.fields)
+        if (!source || source.length === 0 || offset >= source.length) {
+            return []
+        }
 
-        return page.map((record) => projectEntity(record, plan.endpoint, projection, tables, indexes))
+        let page: readonly EntityRecord[]
+        if (plan.search === undefined && plan.orderBy === undefined) {
+            if (plan.where === undefined) {
+                page = source.slice(offset, offset + limit)
+            } else {
+                const matches = compilePredicate(plan.endpoint, plan.where, tables, indexes)
+                const collected: EntityRecord[] = []
+                let skipped = 0
+                for (const record of source) {
+                    if (!matches(record)) continue
+                    if (skipped < offset) {
+                        skipped += 1
+                        continue
+                    }
+                    collected.push(record)
+                    if (collected.length >= limit) break
+                }
+                page = collected
+            }
+        } else {
+            let rows: readonly EntityRecord[] = source
+            if (plan.search !== undefined) {
+                rows = filterAndRankBySearch(rows, plan.search, aliases)
+            }
+            if (plan.where !== undefined) {
+                const matches = compilePredicate(plan.endpoint, plan.where, tables, indexes)
+                rows = rows.filter(matches)
+            }
+            if (plan.orderBy !== undefined) {
+                rows = sortRows(rows, plan.endpoint, plan.orderBy, tables, indexes)
+            }
+            page = rows.slice(offset, offset + limit)
+        }
+
+        if (page.length === 0) return []
+        const projection = buildProjectionTree(plan.endpoint, plan.fields, tables, indexes)
+        return page.map((record) => projectEntity(record, projection))
     }
 
     const adapter = Object.freeze({ [EMULATOR_TRANSPORT]: execute })

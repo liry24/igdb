@@ -361,4 +361,82 @@ describe('IGDB emulator', () => {
             } as unknown as IgdbClientOptions),
         ).toThrow(TypeError)
     })
+
+    it('preserves first-seen ID order on duplicate overrides and handles lazy where pagination and deep offsets', async () => {
+        const queries: string[] = []
+        const initial = Array.from({ length: 2_000 }, (_, i) => ({
+            id: i + 1,
+            slug: `game-${i + 1}`,
+            name: `Game ${i + 1}`,
+            rating: i % 100,
+        }))
+        const overrides = [
+            { id: 1, slug: 'game-1-v2', name: 'Game 1 Updated', rating: 99 },
+            { id: 500, slug: 'game-500-v2', name: 'Game 500 Updated', rating: 99 },
+        ]
+        const igdb = createIgdbClient({
+            emulator: createIgdbEmulator({
+                mode: 'replace',
+                data: { games: [...initial, ...overrides] },
+                onQuery: (ctx) => {
+                    queries.push(ctx.query)
+                },
+            }),
+        })
+
+        // First-seen order preserved with last-seen record winning.
+        const firstTwo = await igdb.query('games').fields('slug', 'name', 'rating').limit(2)
+        expect(firstTwo).toEqual([
+            { id: 1, slug: 'game-1-v2', name: 'Game 1 Updated', rating: 99 },
+            { id: 2, slug: 'game-2', name: 'Game 2', rating: 1 },
+        ])
+
+        // Lazy where pagination with offset + limit.
+        const highRatedPage = await igdb
+            .query('games')
+            .fields('id', 'rating')
+            .where((g) => eq(g.rating, 99))
+            .offset(2)
+            .limit(3)
+        expect(highRatedPage.map((row) => row.id)).toEqual([200, 300, 400])
+
+        // Large inArray candidate list (1,000 IDs).
+        const candidateIds = Array.from({ length: 1_000 }, (_, i) => i * 2 + 1)
+        const matched = await igdb
+            .query('games')
+            .fields('id')
+            .where((g) => inArray(g.id, candidateIds))
+            .offset(10)
+            .limit(5)
+        expect(matched.map((row) => row.id)).toEqual([21, 23, 25, 27, 29])
+
+        // Deep offset beyond dataset length returns [] while still invoking onQuery.
+        const countBefore = queries.length
+        expect(await igdb.query('games').offset(5_000).limit(10)).toEqual([])
+        expect(queries.length).toBe(countBefore + 1)
+    })
+
+    it('sorts records with large numeric relation arrays iteratively without stack overflow', async () => {
+        const releaseDates = Array.from({ length: 150_000 }, (_, i) => ({
+            id: i + 1,
+            date: 2_000_000_000 - i,
+        }))
+        const igdb = createIgdbClient({
+            emulator: createIgdbEmulator({
+                mode: 'replace',
+                data: {
+                    games: [
+                        { id: 1, name: 'Large', release_dates: releaseDates },
+                        { id: 2, name: 'Older', release_dates: [{ id: 999_999, date: 1_000_000_000 }] },
+                        { id: 3, name: 'Missing' },
+                    ],
+                },
+            }),
+        })
+
+        const ascIds = (await igdb.query('games').orderBy((g) => asc(g.release_dates.date))).map((row) => row.id)
+        const descIds = (await igdb.query('games').orderBy((g) => desc(g.release_dates.date))).map((row) => row.id)
+        expect(ascIds).toEqual([2, 1, 3])
+        expect(descIds).toEqual([1, 2, 3])
+    })
 })

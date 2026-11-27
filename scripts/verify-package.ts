@@ -133,9 +133,14 @@ async function verify(): Promise<void> {
     assert(emulatorRuntime.length > 0 && emulatorDeclarations.length > 0, 'Emulator build output must not be empty')
 
     const runtimeText = runtime.toString('utf8')
+    const emulatorText = emulatorRuntime.toString('utf8')
     for (const fixtureToken of ['street-fighter-6', 'hollow-knight-silksong', 'monster-hunter-wilds', 'valorant']) {
         assert(!runtimeText.includes(fixtureToken), `Main bundle must not include emulator fixture "${fixtureToken}"`)
     }
+    assert(
+        (emulatorText.match(/\/\*\s*[#@]__PURE__\s*\*\//gu)?.length ?? 0) >= 2,
+        'Emulator bundle must retain /* @__PURE__ */ annotations for unused default fixture tree-shaking',
+    )
 
     // Consumers verify the archive hash; checkout line endings can differ across operating systems.
     if (args[0] !== '--consumer') {
@@ -266,6 +271,13 @@ async function verify(): Promise<void> {
     assert.equal(sf6[0]?.slug, 'street-fighter-6')
     assert.equal(typeof sf6[0]?.cover?.image_id, 'string')
 
+    let unpackedBytes = 0
+    let totalDeclarationBytes = 0
+    for (const [name, contents] of entries) {
+        unpackedBytes += contents.length
+        if (name.endsWith('.d.ts')) totalDeclarationBytes += contents.length
+    }
+
     const report = JSON.stringify(
         {
             name: manifest.name,
@@ -279,6 +291,8 @@ async function verify(): Promise<void> {
             emulatorBytes: emulatorRuntime.length,
             emulatorGzipBytes: gzipSync(emulatorRuntime).length,
             emulatorDeclarationBytes: emulatorDeclarations.length,
+            totalDeclarationBytes,
+            unpackedBytes,
             tarballBytes: archive.length,
             runtimeSmoke: 'passed with Web APIs, token cache, and isolated emulator',
         },
