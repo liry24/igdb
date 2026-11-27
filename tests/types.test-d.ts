@@ -1,10 +1,13 @@
 import { expectTypeOf } from 'vitest'
 
+import { createIgdbEmulator } from '../src/emulator.js'
 import { createFields } from '../src/expressions.js'
 import {
     and,
     arrayContains,
     arrayOverlaps,
+    createIgdbClient,
+    createMemoryTokenCache,
     desc,
     eq,
     gte,
@@ -178,3 +181,17 @@ names.where(() => eq(platforms.id, 1))
 // @ts-expect-error Combining another endpoint cannot erase the mismatch.
 names.where(() => and(eq(games.id, 1), eq(platforms.id, 1)))
 expectTypeOf(eq(games.id, 1)).toEqualTypeOf<Predicate<'games'>>()
+
+const tokenCache = createMemoryTokenCache()
+createIgdbClient({ clientId: 'id', clientSecret: 'secret', tokenCache, dedupeAuth: false })
+// @ts-expect-error tokenCache is only supported in clientSecret mode.
+createIgdbClient({ clientId: 'id', accessToken: 'token', tokenCache })
+
+const emulator = createIgdbEmulator()
+createIgdbClient({ emulator, timeoutMs: 5_000 })
+// @ts-expect-error emulator cannot be combined with clientId.
+createIgdbClient({ emulator, clientId: 'id' })
+// @ts-expect-error emulator cannot be combined with accessToken.
+createIgdbClient({ emulator, accessToken: 'token' })
+// @ts-expect-error emulator cannot be combined with clientSecret.
+createIgdbClient({ emulator, clientSecret: 'secret' })

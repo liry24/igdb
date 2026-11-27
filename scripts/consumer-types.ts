@@ -1,7 +1,9 @@
-// Compiled against package.json exports and dist/index.d.ts, never src/index.ts.
+// Compiled against package.json exports and dist/index.d.ts + dist/emulator.d.ts, never src/*.
 // This file is checked in both NodeNext and Bundler mode without @types/node.
-import { and, arrayOverlaps, createIgdbClient, desc, eq, gte } from '@liry24/igdb'
-import type { Endpoint, Game } from '@liry24/igdb'
+import { and, arrayOverlaps, createIgdbClient, createMemoryTokenCache, desc, eq, gte } from '@liry24/igdb'
+import type { Endpoint, Game, IgdbEmulator, IgdbToken, IgdbTokenCache } from '@liry24/igdb'
+import { createIgdbEmulator, defaultEmulatorAliases, defaultEmulatorDataset } from '@liry24/igdb/emulator'
+import type { EmulatorDataset, IgdbEmulatorOptions, IgdbEmulatorQueryContext } from '@liry24/igdb/emulator'
 
 const fetchMock: typeof fetch = async () => new Response('[]', { headers: { 'Content-Type': 'application/json' } })
 
@@ -56,10 +58,54 @@ client.query('games').where((game) => gte(game.rating, undefined))
 // @ts-expect-error Relation collection filters compare numeric IDs.
 client.query('games').where((game) => arrayOverlaps(game.platforms, ['6']))
 
-createIgdbClient({ clientId: 'consumer-check', clientSecret: 'consumer-secret', fetch: fetchMock })
+const tokenCache: IgdbTokenCache = createMemoryTokenCache()
+const sampleToken: IgdbToken = { accessToken: 'token', expiresAt: Date.now() + 60_000 }
+void tokenCache.set('key', sampleToken)
+
+createIgdbClient({
+    clientId: 'consumer-check',
+    clientSecret: 'consumer-secret',
+    tokenCache,
+    dedupeAuth: false,
+    fetch: fetchMock,
+})
 
 // @ts-expect-error Exactly one credential mode is required.
 createIgdbClient({ clientId: 'consumer-check' })
 
 // @ts-expect-error Credential modes are mutually exclusive.
 createIgdbClient({ clientId: 'consumer-check', accessToken: 'token', clientSecret: 'secret' })
+
+// @ts-expect-error tokenCache is only available with clientSecret.
+createIgdbClient({ clientId: 'consumer-check', accessToken: 'token', tokenCache })
+
+// @ts-expect-error dedupeAuth is only available with clientSecret.
+createIgdbClient({ clientId: 'consumer-check', accessToken: 'token', dedupeAuth: false })
+
+const dataset: EmulatorDataset = defaultEmulatorDataset
+const aliases: Readonly<Record<number, readonly string[]>> = defaultEmulatorAliases
+const emulatorOptions: IgdbEmulatorOptions = {
+    data: dataset,
+    aliases,
+    mode: 'merge',
+    delayMs: 0,
+    onQuery: (_ctx: IgdbEmulatorQueryContext) => undefined,
+}
+const emulator: IgdbEmulator = createIgdbEmulator(emulatorOptions)
+const emulatedClient = createIgdbClient({ emulator, timeoutMs: 5_000 })
+const emulatedRows = await emulatedClient.query('games').fields('id', 'slug', 'name', 'cover.image_id').search('sf6')
+type EmulatedRow = (typeof emulatedRows)[number]
+export type EmulatedSlug = Expect<Equal<EmulatedRow['slug'], string | undefined>>
+export type EmulatedCoverImageId = Expect<Equal<NonNullable<EmulatedRow['cover']>['image_id'], string | undefined>>
+
+// @ts-expect-error emulator cannot be combined with clientId.
+createIgdbClient({ emulator, clientId: 'consumer-check' })
+
+// @ts-expect-error emulator cannot be combined with clientSecret.
+createIgdbClient({ emulator, clientSecret: 'consumer-secret' })
+
+// @ts-expect-error emulator cannot be combined with accessToken.
+createIgdbClient({ emulator, accessToken: 'consumer-token' })
+
+// @ts-expect-error emulator cannot be combined with fetch.
+createIgdbClient({ emulator, fetch: fetchMock })

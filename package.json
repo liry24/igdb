@@ -34,6 +34,10 @@
         ".": {
             "types": "./dist/index.d.ts",
             "default": "./dist/index.js"
+        },
+        "./emulator": {
+            "types": "./dist/emulator.d.ts",
+            "default": "./dist/emulator.js"
         }
     },
     "publishConfig": {

@@ -1,7 +1,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { IgdbError } from '../src/errors.js'
-import { createTransport, type IgdbClientOptions } from '../src/transport.js'
+import {
+    createMemoryTokenCache,
+    createTransport,
+    type IgdbClientOptions,
+    type IgdbTokenCache,
+} from '../src/transport.js'
 
 const tokenUrl = 'https://id.twitch.tv/oauth2/token'
 const secret = 'synthetic-private-secret'
@@ -31,7 +36,7 @@ describe('transport authentication', () => {
         expect(await transport.request('games', 'fields id;')).toEqual([{ id: 1 }])
         expect(fetch.mock.calls[0]?.[0]).toBe('https://api.igdb.com/v4/games')
         const init = fetch.mock.calls[0]?.[1]
-        expect(init).toMatchObject({ method: 'POST', body: 'fields id;', redirect: 'error' })
+        expect(init).toMatchObject({ method: 'POST', body: 'fields id;', redirect: 'manual' })
         expect(new Headers(init?.headers).get('Client-ID')).toBe('client')
         expect(new Headers(init?.headers).get('Authorization')).toBe('Bearer external-token')
         await expect(transport.request('games', 'fields id;')).rejects.toMatchObject({
@@ -53,7 +58,7 @@ describe('transport authentication', () => {
         const second = transport.request('games', 'second')
         expect(fetch).toHaveBeenCalledTimes(1)
         const init = fetch.mock.calls[0]?.[1]
-        expect(init).toMatchObject({ method: 'POST', redirect: 'error' })
+        expect(init).toMatchObject({ method: 'POST', redirect: 'manual' })
         expect(init?.body).toBeInstanceOf(URLSearchParams)
         const body = init!.body as URLSearchParams
         expect(body.get('client_secret')).toBe(secret)
@@ -305,5 +310,227 @@ describe('sanitized errors', () => {
         await expect(transport.request('//example.com', '')).rejects.toThrow(TypeError)
         await expect(transport.request('games?redirect=example.com', '')).rejects.toThrow(TypeError)
         expect(fetch).not.toHaveBeenCalled()
+    })
+})
+
+function makeOpaqueRedirect() {
+    const cancel = vi.fn<() => Promise<undefined>>(async () => undefined)
+    const response = {
+        type: 'opaqueredirect',
+        status: 0,
+        ok: false,
+        headers: new Headers(),
+        body: { cancel },
+    } as unknown as Response
+    return { response, cancel }
+}
+
+describe('workerd redirect handling', () => {
+    it('succeeds against a workerd-like fetch that rejects redirect: error', async () => {
+        const fetch = vi.fn<typeof globalThis.fetch>(async (url, init) => {
+            if (init?.redirect === 'error') {
+                throw new TypeError("redirect: 'error' is not supported in workerd")
+            }
+            expect(init?.redirect).toBe('manual')
+            return url === tokenUrl ? tokenResponse('workerd-token') : Response.json([{ id: 42 }])
+        })
+        const transport = createTransport({ clientId: 'client', clientSecret: secret, fetch })
+        expect(await transport.request('games', 'fields id;')).toEqual([{ id: 42 }])
+        expect(fetch).toHaveBeenCalledTimes(2)
+    })
+
+    it.each([301, 302, 303, 307, 308])(
+        'rejects HTTP %i redirects in both auth and request phases and cancels the body',
+        async (status) => {
+            const makeRedirect = () => {
+                const response = new Response('redirect-body', {
+                    status,
+                    headers: { location: 'https://evil.example/' },
+                })
+                const cancel = vi.spyOn(response.body!, 'cancel')
+                return { response, cancel }
+            }
+
+            const authRedirect = makeRedirect()
+            const authTransport = createTransport({
+                clientId: 'client',
+                clientSecret: secret,
+                fetch: vi.fn<typeof globalThis.fetch>().mockResolvedValueOnce(authRedirect.response),
+            })
+            await expect(authTransport.request('games', 'fields id;')).rejects.toMatchObject({
+                code: 'NETWORK_ERROR',
+                phase: 'auth',
+            })
+            expect(authRedirect.cancel).toHaveBeenCalledTimes(1)
+
+            const requestRedirect = makeRedirect()
+            const requestTransport = createTransport({
+                clientId: 'client',
+                accessToken: 'token',
+                fetch: vi.fn<typeof globalThis.fetch>().mockResolvedValueOnce(requestRedirect.response),
+            })
+            await expect(requestTransport.request('games', 'fields id;')).rejects.toMatchObject({
+                code: 'NETWORK_ERROR',
+                phase: 'request',
+            })
+            expect(requestRedirect.cancel).toHaveBeenCalledTimes(1)
+        },
+    )
+
+    it('rejects opaqueredirect responses in both auth and request phases and cancels the body', async () => {
+        const authOpaque = makeOpaqueRedirect()
+        const authTransport = createTransport({
+            clientId: 'client',
+            clientSecret: secret,
+            fetch: vi.fn<typeof globalThis.fetch>().mockResolvedValueOnce(authOpaque.response),
+        })
+        await expect(authTransport.request('games', 'fields id;')).rejects.toMatchObject({
+            code: 'NETWORK_ERROR',
+            phase: 'auth',
+        })
+        expect(authOpaque.cancel).toHaveBeenCalledTimes(1)
+
+        const reqOpaque = makeOpaqueRedirect()
+        const reqTransport = createTransport({
+            clientId: 'client',
+            accessToken: 'token',
+            fetch: vi.fn<typeof globalThis.fetch>().mockResolvedValueOnce(reqOpaque.response),
+        })
+        await expect(reqTransport.request('games', 'fields id;')).rejects.toMatchObject({
+            code: 'NETWORK_ERROR',
+            phase: 'request',
+        })
+        expect(reqOpaque.cancel).toHaveBeenCalledTimes(1)
+    })
+})
+
+describe('workerd-safe token cache and auth isolation', () => {
+    it('reuses tokens across per-request transports, hashes cache keys, and rotates when clientSecret changes', async () => {
+        const inner = createMemoryTokenCache()
+        const seenKeys: string[] = []
+        const tokenCache: IgdbTokenCache = {
+            get: (key) => {
+                seenKeys.push(key)
+                return inner.get(key)
+            },
+            set: (key, token) => {
+                seenKeys.push(key)
+                return inner.set(key, token)
+            },
+            delete: (key) => inner.delete(key),
+        }
+
+        let authCalls = 0
+        const fetch = vi.fn<typeof globalThis.fetch>(async (url, init) => {
+            if (url === tokenUrl) {
+                authCalls += 1
+                return tokenResponse(`token-${authCalls}`)
+            }
+            return Response.json([{ id: authCalls, auth: new Headers(init?.headers).get('Authorization') }])
+        })
+
+        const first = createTransport({ clientId: 'client', clientSecret: secret, tokenCache, fetch })
+        const second = createTransport({ clientId: 'client', clientSecret: secret, tokenCache, fetch })
+        expect(await first.request('games', 'fields id;')).toEqual([{ id: 1, auth: 'Bearer token-1' }])
+        expect(await second.request('games', 'fields id;')).toEqual([{ id: 1, auth: 'Bearer token-1' }])
+        expect(authCalls).toBe(1)
+
+        const rotated = createTransport({ clientId: 'client', clientSecret: 'rotated-secret', tokenCache, fetch })
+        expect(await rotated.request('games', 'fields id;')).toEqual([{ id: 2, auth: 'Bearer token-2' }])
+        expect(authCalls).toBe(2)
+
+        expect(seenKeys.length).toBeGreaterThan(0)
+        for (const key of seenKeys) {
+            expect(key).toMatch(/^igdb:token:v1:[0-9a-f]{64}$/u)
+            expect(key).not.toContain(secret)
+            expect(key).not.toContain('rotated-secret')
+        }
+    })
+
+    it('deletes a cached token on 401 and retries once with a fresh token', async () => {
+        const inner = createMemoryTokenCache()
+        const deleteSpy = vi.fn<(key: string) => void | Promise<void>>((key) => inner.delete(key))
+        const tokenCache: IgdbTokenCache = {
+            get: (key) => inner.get(key),
+            set: (key, token) => inner.set(key, token),
+            delete: deleteSpy,
+        }
+
+        let authCalls = 0
+        const fetch = vi.fn<typeof globalThis.fetch>(async (url, init) => {
+            if (url === tokenUrl) {
+                authCalls += 1
+                return tokenResponse(`token-${authCalls}`)
+            }
+            if (new Headers(init?.headers).get('Authorization') === 'Bearer token-1') {
+                return new Response(null, { status: 401 })
+            }
+            return Response.json([{ id: 9 }])
+        })
+
+        const t1 = createTransport({ clientId: 'client', clientSecret: secret, tokenCache, fetch })
+        expect(await t1.request('games', 'fields id;')).toEqual([{ id: 9 }])
+        expect(deleteSpy).toHaveBeenCalledTimes(1)
+        expect(authCalls).toBe(2)
+
+        // Subsequent transport reuses the refreshed token without another OAuth call.
+        const t2 = createTransport({ clientId: 'client', clientSecret: secret, tokenCache, fetch })
+        expect(await t2.request('games', 'fields id;')).toEqual([{ id: 9 }])
+        expect(authCalls).toBe(2)
+    })
+
+    it('keeps auth isolated when dedupeAuth defaults to false with tokenCache', async () => {
+        const tokenCache = createMemoryTokenCache()
+        const hangingAuth = deferred<Response>()
+        let authAttempts = 0
+        const fetch = vi.fn<typeof globalThis.fetch>(async (url) => {
+            if (url === tokenUrl) {
+                authAttempts += 1
+                return authAttempts === 1 ? hangingAuth.promise : tokenResponse('fresh')
+            }
+            return Response.json([{ id: 1 }])
+        })
+
+        const transport = createTransport({ clientId: 'client', clientSecret: secret, tokenCache, fetch })
+        const controller = new AbortController()
+        const first = transport.request('games', 'first', { signal: controller.signal })
+        const second = transport.request('games', 'second')
+
+        expect(await second).toEqual([{ id: 1 }])
+        expect(authAttempts).toBe(2)
+
+        controller.abort()
+        await expect(first).rejects.toMatchObject({ code: 'ABORTED', phase: 'auth' })
+        expect(fetch.mock.calls[0]?.[1]?.signal?.aborted).toBe(true)
+    })
+
+    it('supports async tokenCache implementations and evicts oldest entries above 64 in memory cache', async () => {
+        const memory = createMemoryTokenCache()
+        const future = Date.now() + 60_000
+        for (let i = 0; i < 65; i += 1) {
+            void memory.set(`k-${i}`, { accessToken: `t-${i}`, expiresAt: future })
+        }
+        expect(memory.get('k-0')).toBeUndefined()
+        expect(memory.get('k-1')).toEqual({ accessToken: 't-1', expiresAt: future })
+        expect(memory.get('k-64')).toEqual({ accessToken: 't-64', expiresAt: future })
+
+        const store = new Map<string, { readonly accessToken: string; readonly expiresAt: number }>()
+        const asyncCache: IgdbTokenCache = {
+            get: async (key) => store.get(key),
+            set: async (key, token) => {
+                store.set(key, token)
+            },
+            delete: async (key) => {
+                store.delete(key)
+            },
+        }
+        const fetch = vi.fn<typeof globalThis.fetch>(async (url) =>
+            url === tokenUrl ? tokenResponse('async-token') : Response.json([{ id: 3 }]),
+        )
+        const t1 = createTransport({ clientId: 'client', clientSecret: secret, tokenCache: asyncCache, fetch })
+        const t2 = createTransport({ clientId: 'client', clientSecret: secret, tokenCache: asyncCache, fetch })
+        expect(await t1.request('games', 'fields id;')).toEqual([{ id: 3 }])
+        expect(await t2.request('games', 'fields id;')).toEqual([{ id: 3 }])
+        expect(fetch.mock.calls.filter(([url]) => url === tokenUrl)).toHaveLength(1)
     })
 })

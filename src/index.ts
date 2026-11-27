@@ -1,4 +1,5 @@
 export { createIgdbClient, type IgdbClient } from './client.js'
+export type { IgdbEmulator } from './emulator-bridge.js'
 export { IgdbError, type IgdbErrorCode, type IgdbErrorPhase } from './errors.js'
 export {
     and,
@@ -23,5 +24,11 @@ export {
 } from './expressions.js'
 export type { IgdbQuery } from './query.js'
 export type * from './schema.js'
-export type { IgdbClientOptions, RequestOptions } from './transport.js'
+export {
+    createMemoryTokenCache,
+    type IgdbClientOptions,
+    type IgdbToken,
+    type IgdbTokenCache,
+    type RequestOptions,
+} from './transport.js'
 export type { EndpointFields, QueryResult } from './types.js'

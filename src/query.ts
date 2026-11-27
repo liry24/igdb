@@ -1,9 +1,10 @@
+import type { OrderAst, PredicateAst, QueryPlan } from './emulator-bridge.js'
 import { IgdbError } from './errors.js'
 import {
+    compileOrder,
+    compilePredicate,
     createFields,
     escapeString,
-    serializeOrder,
-    serializePredicate,
     type OrderExpr,
     type Predicate,
 } from './expressions.js'
@@ -14,8 +15,11 @@ import type { EndpointFields, QueryResult, ValidateFields } from './types.js'
 interface QueryState {
     readonly fields: readonly string[]
     readonly where?: string | undefined
+    readonly whereAst?: PredicateAst | undefined
     readonly orderBy?: string | undefined
+    readonly orderByAst?: OrderAst | undefined
     readonly search?: string | undefined
+    readonly searchRaw?: string | undefined
     readonly limit?: number | undefined
     readonly offset?: number | undefined
 }
@@ -57,16 +61,20 @@ export class IgdbQuery<E extends Endpoint, Selection extends string = 'id'> impl
     /** Replace the filter. Returning undefined removes the existing filter. */
     where(callback: (fields: EndpointFields<E>) => Predicate<E> | undefined): IgdbQuery<E, Selection> {
         if (typeof callback !== 'function') throw new TypeError('where() requires a callback.')
+        const compiled = compilePredicate(callback(createFields(this.#endpoint)), this.#endpoint)
         return this.#with({
-            where: serializePredicate(callback(createFields(this.#endpoint)), this.#endpoint),
+            where: compiled?.text,
+            whereAst: compiled?.ast,
         })
     }
 
     /** Replace the sort with one field expression. */
     orderBy(callback: (fields: EndpointFields<E>) => OrderExpr<E>): IgdbQuery<E, Selection> {
         if (typeof callback !== 'function') throw new TypeError('orderBy() requires a callback.')
+        const compiled = compileOrder(callback(createFields(this.#endpoint)), this.#endpoint)
         return this.#with({
-            orderBy: serializeOrder(callback(createFields(this.#endpoint)), this.#endpoint),
+            orderBy: compiled.text,
+            orderByAst: compiled.ast,
         })
     }
 
@@ -76,7 +84,7 @@ export class IgdbQuery<E extends Endpoint, Selection extends string = 'id'> impl
             throw new TypeError('This IGDB endpoint does not support search().')
         }
         if (typeof text !== 'string') throw new TypeError('search() requires a string.')
-        return this.#with({ search: escapeString(text) })
+        return this.#with({ search: escapeString(text), searchRaw: text })
     }
 
     /** Set the page size, from 1 to 500. */
@@ -109,7 +117,16 @@ export class IgdbQuery<E extends Endpoint, Selection extends string = 'id'> impl
 
     /** Fetch one page. The response is not mapped or fully schema-validated. */
     async execute(options?: RequestOptions): Promise<QueryResult<E, Selection>[]> {
-        const result = await this.#transport.request(this.#endpoint, this.build(), options)
+        const plan: QueryPlan = {
+            endpoint: this.#endpoint,
+            fields: this.#state.fields,
+            where: this.#state.whereAst,
+            orderBy: this.#state.orderByAst,
+            search: this.#state.searchRaw,
+            limit: this.#state.limit,
+            offset: this.#state.offset,
+        }
+        const result = await this.#transport.request(this.#endpoint, this.build(), options, plan)
         if (
             !Array.isArray(result) ||
             result.some((record: unknown) => record === null || typeof record !== 'object' || Array.isArray(record))

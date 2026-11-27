@@ -25,6 +25,35 @@ const games = await igdb.query('games').fields('id', 'name', 'slug', 'cover.imag
 
 `createIgdbClient` also accepts `timeoutMs` (default `10_000`) and a custom `fetch` implementation. Never expose Twitch credentials in browser code.
 
+### Cloudflare Workers (`workerd`)
+
+Share a plain-data token cache across per-request clients so no in-flight I/O crosses requests (`dedupeAuth` defaults to `false` when `tokenCache` is supplied):
+
+```ts
+import { createIgdbClient, createMemoryTokenCache } from '@liry24/igdb'
+
+const tokenCache = createMemoryTokenCache()
+
+export async function searchGames(clientId: string, clientSecret: string, q: string) {
+    const igdb = createIgdbClient({ clientId, clientSecret, tokenCache, timeoutMs: 5_000 })
+    return await igdb.query('games').fields('id', 'slug', 'name', 'cover.image_id').search(q).limit(10)
+}
+```
+
+### Local development and testing (emulator)
+
+Use `@liry24/igdb/emulator` to run queries in memory with built-in fixtures and no Twitch credentials or network requests:
+
+```ts
+import { createIgdbClient } from '@liry24/igdb'
+import { createIgdbEmulator } from '@liry24/igdb/emulator'
+
+const igdb = createIgdbClient({ emulator: createIgdbEmulator() })
+const games = await igdb.query('games').fields('id', 'slug', 'name', 'cover.image_id').search('sf6').limit(10)
+```
+
+Pass `{ data, mode: 'merge' | 'replace', aliases, delayMs, onQuery }` to customize fixtures or inject `IgdbError` failures. Using `await import('@liry24/igdb/emulator')` keeps fixtures out of production bundles.
+
 ## Filters, sorting, and execution
 
 Queries are immutable and reusable. Awaiting a query executes a fresh request; call `.build()` to inspect the APICalypse string or `.execute()` to pass per-request options:

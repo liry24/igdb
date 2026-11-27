@@ -66,15 +66,27 @@ async function verify(): Promise<void> {
         assert.equal(sha256, expectedHash, 'The consumer archive differs from the verified build')
     }
     const entries = unpack(archive)
-    const expectedFiles = [
+    const expectedStaticFiles = [
         'package/LICENSE',
         'package/README.md',
         'package/THIRD_PARTY_NOTICES.md',
+        'package/dist/emulator.d.ts',
+        'package/dist/emulator.js',
         'package/dist/index.d.ts',
         'package/dist/index.js',
         'package/package.json',
     ]
-    assert.deepEqual(new Set(entries.keys()), new Set(expectedFiles), 'Unexpected published files')
+    const actualFiles = [...entries.keys()]
+    for (const file of expectedStaticFiles) {
+        assert(entries.has(file), `Missing expected published file: ${file}`)
+    }
+    const extraFiles = actualFiles.filter((file) => !expectedStaticFiles.includes(file))
+    for (const file of extraFiles) {
+        assert(
+            /^package\/dist\/[a-zA-Z0-9_-]+\.d\.ts$/u.test(file),
+            `Unexpected published file (only shared declaration chunks are allowed): ${file}`,
+        )
+    }
 
     const manifest: unknown = JSON.parse(entries.get('package/package.json')!.toString('utf8'))
     assert(isRecord(manifest), 'The package manifest must be an object')
@@ -96,6 +108,7 @@ async function verify(): Promise<void> {
     assert.equal(manifest.publishConfig.access, 'public')
     assert.deepEqual(manifest.exports, {
         '.': { types: './dist/index.d.ts', default: './dist/index.js' },
+        './emulator': { types: './dist/emulator.d.ts', default: './dist/emulator.js' },
     })
     for (const field of [
         'dependencies',
@@ -114,7 +127,16 @@ async function verify(): Promise<void> {
 
     const runtime = entries.get('package/dist/index.js')!
     const declarations = entries.get('package/dist/index.d.ts')!
-    assert(runtime.length > 0 && declarations.length > 0, 'Build output must not be empty')
+    const emulatorRuntime = entries.get('package/dist/emulator.js')!
+    const emulatorDeclarations = entries.get('package/dist/emulator.d.ts')!
+    assert(runtime.length > 0 && declarations.length > 0, 'Main build output must not be empty')
+    assert(emulatorRuntime.length > 0 && emulatorDeclarations.length > 0, 'Emulator build output must not be empty')
+
+    const runtimeText = runtime.toString('utf8')
+    for (const fixtureToken of ['street-fighter-6', 'hollow-knight-silksong', 'monster-hunter-wilds', 'valorant']) {
+        assert(!runtimeText.includes(fixtureToken), `Main bundle must not include emulator fixture "${fixtureToken}"`)
+    }
+
     // Consumers verify the archive hash; checkout line endings can differ across operating systems.
     if (args[0] !== '--consumer') {
         await Promise.all(
@@ -126,37 +148,55 @@ async function verify(): Promise<void> {
 
     // No process, Buffer, require, or Node modules are available in this realm.
     // This checks standard Web APIs, not Cloudflare's full runtime integration.
-    const module = new vm.SourceTextModule(runtime.toString('utf8'), {
-        context: vm.createContext({
-            AbortController,
-            AbortSignal,
-            Headers,
-            Request,
-            Response,
-            URL,
-            URLSearchParams,
-            TextDecoder,
-            TextEncoder,
-            setTimeout,
-            clearTimeout,
-            fetch: (): never => {
-                throw new Error('Unexpected global fetch; package checks must not use the network')
-            },
-        }),
+    const context = vm.createContext({
+        AbortController,
+        AbortSignal,
+        Headers,
+        Request,
+        Response,
+        URL,
+        URLSearchParams,
+        TextDecoder,
+        TextEncoder,
+        crypto: globalThis.crypto,
+        setTimeout,
+        clearTimeout,
+        fetch: (): never => {
+            throw new Error('Unexpected global fetch; package checks must not use the network')
+        },
+    })
+    const module = new vm.SourceTextModule(runtimeText, {
+        context,
         importModuleDynamically: (): never => {
             throw new Error('Runtime dynamic imports are not allowed')
         },
     })
-    assert.deepEqual(module.dependencySpecifiers, [], 'The runtime bundle must have no imports')
+    assert.deepEqual(module.dependencySpecifiers, [], 'The main runtime bundle must have no imports')
     await module.link((): never => {
         throw new Error('Runtime module dependencies are not allowed')
     })
     await module.evaluate()
 
+    const emulatorModule = new vm.SourceTextModule(emulatorRuntime.toString('utf8'), {
+        context,
+        importModuleDynamically: (): never => {
+            throw new Error('Runtime dynamic imports are not allowed')
+        },
+    })
+    assert.deepEqual(emulatorModule.dependencySpecifiers, [], 'The emulator bundle must have no imports')
+    await emulatorModule.link((): never => {
+        throw new Error('Runtime module dependencies are not allowed')
+    })
+    await emulatorModule.evaluate()
+
     // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- The isolated build is exercised below against the source module's public contract.
     const api = module.namespace as typeof import('../src/index.js')
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- The isolated emulator build is exercised below against the source module's public contract.
+    const emulatorApi = emulatorModule.namespace as typeof import('../src/emulator.js')
+
     const requestUrls: string[] = []
     const fetchMock: typeof fetch = async (input, init) => {
+        assert.equal(init?.redirect, 'manual', 'Transport must use redirect: manual for workerd compatibility')
         const request = new Request(input, init)
         requestUrls.push(request.url)
         assert.equal(request.method, 'POST')
@@ -190,18 +230,57 @@ async function verify(): Promise<void> {
     const expectedUrl = `https://api.igdb.com/v${version[1]}/games`
     assert.deepEqual(requestUrls, [expectedUrl, expectedUrl], 'The package major must match the IGDB API version')
 
+    // Smoke-test workerd-safe token cache across packed bundle.
+    const tokenCache = api.createMemoryTokenCache()
+    let authCalls = 0
+    const oauthFetch: typeof fetch = async (input, init) => {
+        assert.equal(init?.redirect, 'manual')
+        const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
+        if (url === 'https://id.twitch.tv/oauth2/token') {
+            authCalls += 1
+            return Response.json({ access_token: 'cached-token', expires_in: 3600 })
+        }
+        return Response.json([{ id: 7 }])
+    }
+    const cachedClient1 = api.createIgdbClient({
+        clientId: 'package-check',
+        clientSecret: 'package-secret',
+        tokenCache,
+        fetch: oauthFetch,
+    })
+    const cachedClient2 = api.createIgdbClient({
+        clientId: 'package-check',
+        clientSecret: 'package-secret',
+        tokenCache,
+        fetch: oauthFetch,
+    })
+    assert.deepEqual(await cachedClient1.query('games').limit(1), [{ id: 7 }])
+    assert.deepEqual(await cachedClient2.query('games').limit(1), [{ id: 7 }])
+    assert.equal(authCalls, 1, 'Shared token cache should reuse the token across client instances')
+
+    // Smoke-test the packed emulator across dist/index.js and dist/emulator.js without fetch or credentials.
+    const emulated = api.createIgdbClient({ emulator: emulatorApi.createIgdbEmulator(), timeoutMs: 5_000 })
+    const sf6 = await emulated.query('games').fields('id', 'slug', 'name', 'cover.image_id').search('sf6').limit(1)
+    assert.equal(sf6.length, 1)
+    assert.equal(sf6[0]?.id, 191692)
+    assert.equal(sf6[0]?.slug, 'street-fighter-6')
+    assert.equal(typeof sf6[0]?.cover?.image_id, 'string')
+
     const report = JSON.stringify(
         {
             name: manifest.name,
             version: manifest.version,
-            files: expectedFiles,
+            files: actualFiles,
             sha256,
             runtimeDependencies: 0,
             runtimeBytes: runtime.length,
             runtimeGzipBytes: gzipSync(runtime).length,
             declarationBytes: declarations.length,
+            emulatorBytes: emulatorRuntime.length,
+            emulatorGzipBytes: gzipSync(emulatorRuntime).length,
+            emulatorDeclarationBytes: emulatorDeclarations.length,
             tarballBytes: archive.length,
-            runtimeSmoke: 'passed with Web APIs and injected fetch',
+            runtimeSmoke: 'passed with Web APIs, token cache, and isolated emulator',
         },
         null,
         2,
