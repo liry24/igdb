@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { IgdbError } from '../src/errors.js'
 import {
@@ -401,6 +401,131 @@ describe('workerd redirect handling', () => {
             phase: 'request',
         })
         expect(reqOpaque.cancel).toHaveBeenCalledTimes(1)
+    })
+})
+
+describe('automatic workerd token cache', () => {
+    beforeEach(() => vi.stubGlobal('navigator', { userAgent: 'Cloudflare-Workers' }))
+
+    it('reuses completed tokens across clients and separates credential pairs', async () => {
+        let authCalls = 0
+        const fetch = vi.fn<typeof globalThis.fetch>(async (url, init) => {
+            if (url === tokenUrl) return tokenResponse(`token-${++authCalls}`)
+            return Response.json(new Headers(init?.headers).get('Authorization'))
+        })
+        vi.stubGlobal('fetch', fetch)
+        const options = { clientId: 'client', clientSecret: secret }
+        const request = (credentials: IgdbClientOptions = options) =>
+            createTransport(credentials).request('games', 'fields id;')
+
+        expect(await request()).toBe('Bearer token-1')
+        expect(await request()).toBe('Bearer token-1')
+        expect(await request({ ...options, fetch: globalThis.fetch })).toBe('Bearer token-1')
+        expect(await request({ ...options, clientSecret: 'rotated' })).toBe('Bearer token-2')
+        expect(await request({ ...options, clientId: 'other-client' })).toBe('Bearer token-3')
+        expect(await request()).toBe('Bearer token-1')
+        expect(authCalls).toBe(3)
+    })
+
+    it('does not auto-share tokens outside Cloudflare Workers', async () => {
+        vi.stubGlobal('navigator', undefined)
+        let authCalls = 0
+        const fetch = vi.fn<typeof globalThis.fetch>(async (url, init) => {
+            if (url === tokenUrl) return tokenResponse(`token-${++authCalls}`)
+            return Response.json(new Headers(init?.headers).get('Authorization'))
+        })
+        const options = { clientId: 'client', clientSecret: secret, fetch }
+
+        expect(await createTransport(options).request('games', 'fields id;')).toBe('Bearer token-1')
+        expect(await createTransport(options).request('games', 'fields id;')).toBe('Bearer token-2')
+        expect(authCalls).toBe(2)
+    })
+
+    it('isolates custom fetch functions and honors an explicit cache', async () => {
+        let authCalls = 0
+        const oauthFetch: typeof globalThis.fetch = async (url, init) => {
+            if (url === tokenUrl) return tokenResponse(`token-${++authCalls}`)
+            return Response.json(new Headers(init?.headers).get('Authorization'))
+        }
+        const fetch1 = vi.fn<typeof globalThis.fetch>(oauthFetch)
+        const fetch2 = vi.fn<typeof globalThis.fetch>(oauthFetch)
+        const tokenCache = createMemoryTokenCache()
+        const options = { clientId: 'client', clientSecret: secret }
+        const request = (fetch: typeof globalThis.fetch, cache?: IgdbTokenCache) =>
+            createTransport({ ...options, fetch, ...(cache && { tokenCache: cache }) }).request('games', 'fields id;')
+
+        expect(await request(fetch1)).toBe('Bearer token-1')
+        expect(await request(fetch2)).toBe('Bearer token-2')
+        expect(await request(fetch1, tokenCache)).toBe('Bearer token-3')
+        expect(await request(fetch2, tokenCache)).toBe('Bearer token-3')
+        expect(await request(fetch1)).toBe('Bearer token-1')
+        expect(authCalls).toBe(3)
+    })
+
+    it('keeps concurrent authentication and cancellation local to each request', async () => {
+        const authStarted = deferred<AbortSignal | null | undefined>()
+        const hangingAuth = deferred<Response>()
+        let authCalls = 0
+        const fetch = vi.fn<typeof globalThis.fetch>(async (url, init) => {
+            if (url !== tokenUrl) return Response.json([{ id: 1 }])
+            if (++authCalls > 1) return tokenResponse('fresh')
+            authStarted.resolve(init?.signal)
+            return hangingAuth.promise
+        })
+        const options = { clientId: 'client', clientSecret: secret, fetch, timeoutMs: 2_000 }
+        const transport = createTransport(options)
+        const controller = new AbortController()
+        const first = Promise.allSettled([transport.request('games', 'first', { signal: controller.signal })])
+        const authSignal = await authStarted.promise
+
+        expect(await transport.request('games', 'second')).toEqual([{ id: 1 }])
+        controller.abort()
+        const [firstResult] = await first
+        expect(firstResult).toMatchObject({ status: 'rejected', reason: { code: 'ABORTED', phase: 'auth' } })
+        expect(authSignal?.aborted).toBe(true)
+        hangingAuth.resolve(tokenResponse('cancelled'))
+        expect(await createTransport(options).request('games', 'third')).toEqual([{ id: 1 }])
+        expect(authCalls).toBe(2)
+    })
+
+    it.each([false, true])('keeps a newer token after a delayed 401 (after retry: %s)', async (afterRetry) => {
+        const delayedResponse = deferred<Response>()
+        const delayedRequestStarted = deferred<void>()
+        const slowToken = afterRetry ? 'Bearer token-2' : 'Bearer token-1'
+        const newestToken = afterRetry ? 'Bearer token-3' : 'Bearer token-2'
+        let authCalls = 0
+        const fetch = vi.fn<typeof globalThis.fetch>(async (url, init) => {
+            if (url === tokenUrl) return tokenResponse(`token-${++authCalls}`)
+            const authorization = new Headers(init?.headers).get('Authorization')
+            if (init?.body === 'slow' && authorization === slowToken) {
+                delayedRequestStarted.resolve()
+                return delayedResponse.promise
+            }
+            if (
+                (afterRetry && init?.body === 'slow' && authorization === 'Bearer token-1') ||
+                (init?.body === 'refresh' && authorization === slowToken)
+            ) {
+                return new Response(null, { status: 401 })
+            }
+            return Response.json(authorization)
+        })
+        const options = { clientId: 'client', clientSecret: secret, fetch }
+        const transport = createTransport(options)
+        const other = createTransport(options)
+        expect(await transport.request('games', 'seed')).toBe('Bearer token-1')
+        const slow = Promise.allSettled([transport.request('games', 'slow')])
+        await delayedRequestStarted.promise
+
+        expect(await other.request('games', 'refresh')).toBe(newestToken)
+        delayedResponse.resolve(new Response(null, { status: 401 }))
+        const [slowResult] = await slow
+        expect(slowResult).toMatchObject(
+            afterRetry
+                ? { status: 'rejected', reason: { code: 'HTTP_ERROR', phase: 'request', status: 401 } }
+                : { status: 'fulfilled', value: newestToken },
+        )
+        expect(await other.request('games', 'cached')).toBe(newestToken)
+        expect(authCalls).toBe(afterRetry ? 3 : 2)
     })
 })
 

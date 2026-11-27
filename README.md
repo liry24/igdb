@@ -27,18 +27,18 @@ const games = await igdb.query('games').fields('id', 'name', 'slug', 'cover.imag
 
 ### Cloudflare Workers (`workerd`)
 
-Share a plain-data token cache across per-request clients so no in-flight I/O crosses requests (`dedupeAuth` defaults to `false` when `tokenCache` is supplied):
+On Cloudflare Workers, `createIgdbClient({ clientId, clientSecret })` automatically shares fetched tokens across clients in the same isolate (scoped per `fetch` function) with `dedupeAuth` disabled by default so no in-flight I/O crosses requests. Overlapping requests on a cold cache may each fetch a token.
 
 ```ts
-import { createIgdbClient, createMemoryTokenCache } from '@liry24/igdb'
-
-const tokenCache = createMemoryTokenCache()
+import { createIgdbClient } from '@liry24/igdb'
 
 export async function searchGames(clientId: string, clientSecret: string, q: string) {
-    const igdb = createIgdbClient({ clientId, clientSecret, tokenCache, timeoutMs: 5_000 })
+    const igdb = createIgdbClient({ clientId, clientSecret, timeoutMs: 5_000 })
     return await igdb.query('games').fields('id', 'slug', 'name', 'cover.image_id').search(q).limit(10)
 }
 ```
+
+Pass `tokenCache` (such as a module-scope `createMemoryTokenCache()`, or a custom store) to control caching explicitly—this is also required if your Worker disables global `navigator`. Supplying `tokenCache` also defaults `dedupeAuth` to `false`.
 
 ### Local development and testing (emulator)
 

@@ -164,6 +164,7 @@ async function verify(): Promise<void> {
         TextDecoder,
         TextEncoder,
         crypto: globalThis.crypto,
+        navigator: { userAgent: 'Cloudflare-Workers' },
         setTimeout,
         clearTimeout,
         fetch: (): never => {
@@ -235,8 +236,7 @@ async function verify(): Promise<void> {
     const expectedUrl = `https://api.igdb.com/v${version[1]}/games`
     assert.deepEqual(requestUrls, [expectedUrl, expectedUrl], 'The package major must match the IGDB API version')
 
-    // Smoke-test workerd-safe token cache across packed bundle.
-    const tokenCache = api.createMemoryTokenCache()
+    // Smoke-test the automatic Workers token cache across the packed bundle.
     let authCalls = 0
     const oauthFetch: typeof fetch = async (input, init) => {
         assert.equal(init?.redirect, 'manual')
@@ -250,18 +250,16 @@ async function verify(): Promise<void> {
     const cachedClient1 = api.createIgdbClient({
         clientId: 'package-check',
         clientSecret: 'package-secret',
-        tokenCache,
         fetch: oauthFetch,
     })
     const cachedClient2 = api.createIgdbClient({
         clientId: 'package-check',
         clientSecret: 'package-secret',
-        tokenCache,
         fetch: oauthFetch,
     })
     assert.deepEqual(await cachedClient1.query('games').limit(1), [{ id: 7 }])
     assert.deepEqual(await cachedClient2.query('games').limit(1), [{ id: 7 }])
-    assert.equal(authCalls, 1, 'Shared token cache should reuse the token across client instances')
+    assert.equal(authCalls, 1, 'Workers should reuse the token across client instances by default')
 
     // Smoke-test the packed emulator across dist/index.js and dist/emulator.js without fetch or credentials.
     const emulated = api.createIgdbClient({ emulator: emulatorApi.createIgdbEmulator(), timeoutMs: 5_000 })

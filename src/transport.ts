@@ -16,6 +16,8 @@ export interface IgdbTokenCache {
     delete(key: string): void | Promise<void>
 }
 
+const workerdCachesByFetch = /* @__PURE__ */ new WeakMap<typeof globalThis.fetch, IgdbTokenCache>()
+
 export type IgdbClientOptions = {
     /** Total time for one request, including authentication and the optional 401 retry. */
     timeoutMs?: number
@@ -34,6 +36,7 @@ export type IgdbClientOptions = {
           clientSecret: string
           accessToken?: never
           tokenCache?: IgdbTokenCache
+          /** Share in-flight authentication within this client. On Workers, opt in only for a request-scoped client. */
           dedupeAuth?: boolean
           fetch?: typeof globalThis.fetch
           emulator?: never
@@ -69,11 +72,6 @@ type Deadline = {
     dispose(): void
 }
 
-interface ResolvedToken {
-    readonly token: IgdbToken
-    readonly cacheKey?: string
-}
-
 /** Create a lightweight synchronous in-memory token cache safe to share across requests in workerd. */
 export function createMemoryTokenCache(): IgdbTokenCache {
     const entries = new Map<string, IgdbToken>()
@@ -100,6 +98,23 @@ export function createMemoryTokenCache(): IgdbTokenCache {
             entries.delete(key)
         },
     }
+}
+
+function getWorkerdTokenCache(fetchImpl: typeof globalThis.fetch): IgdbTokenCache {
+    let cache = workerdCachesByFetch.get(fetchImpl)
+    if (!cache) {
+        cache = createMemoryTokenCache()
+        workerdCachesByFetch.set(fetchImpl, cache)
+    }
+    return cache
+}
+
+function isPromiseLike<T>(value: T | PromiseLike<T>): value is PromiseLike<T> {
+    return (
+        (typeof value === 'object' || typeof value === 'function') &&
+        value !== null &&
+        typeof Reflect.get(value, 'then') === 'function'
+    )
 }
 
 function validateTimeout(value: number): number {
@@ -269,12 +284,19 @@ export function createTransport(options: IgdbClientOptions): Transport {
     if (rawDedupeAuth !== undefined && typeof rawDedupeAuth !== 'boolean') {
         throw new TypeError('dedupeAuth must be a boolean.')
     }
-    const tokenCache = rawTokenCache
-    const dedupeAuth = rawDedupeAuth ?? tokenCache === undefined
     const configuredFetch = options.fetch
+    const defaultFetch = configuredFetch ?? globalThis.fetch
+    const tokenCache =
+        rawTokenCache ??
+        (clientSecret !== undefined &&
+        globalThis.navigator?.userAgent === 'Cloudflare-Workers' &&
+        typeof defaultFetch === 'function'
+            ? getWorkerdTokenCache(defaultFetch)
+            : undefined)
+    const dedupeAuth = rawDedupeAuth ?? tokenCache === undefined
     let cached: IgdbToken | undefined
     let pending: Promise<IgdbToken> | undefined
-    let pendingCached: Promise<{ readonly token: IgdbToken; readonly cacheKey: string }> | undefined
+    let pendingCached: Promise<IgdbToken> | undefined
     let derivedCacheKey: string | undefined
     let pendingCacheKey: Promise<string> | undefined
 
@@ -385,38 +407,44 @@ export function createTransport(options: IgdbClientOptions): Transport {
         }
     }
 
-    async function runSharedWithCache(
-        evictAccessToken?: string,
-    ): Promise<{ readonly token: IgdbToken; readonly cacheKey: string }> {
+    async function readOrAcquireCachedToken(
+        cache: IgdbTokenCache,
+        budget: Deadline,
+        staleAccessToken?: string,
+    ): Promise<IgdbToken> {
+        const cacheKey = await resolveCacheKey(budget)
+        if (budget.signal.aborted) throw budget.error('auth')
+        // Keep synchronous cache reads and evictions in the same turn to avoid races.
+        const rawExisting = cache.get(cacheKey)
+        const existing = isPromiseLike(rawExisting)
+            ? await within(Promise.resolve(rawExisting), budget, 'auth')
+            : rawExisting
+        if (isValidToken(existing) && (staleAccessToken === undefined || existing.accessToken !== staleAccessToken)) {
+            return { accessToken: existing.accessToken, expiresAt: existing.expiresAt }
+        }
+        if (staleAccessToken !== undefined) {
+            const deletion = cache.delete(cacheKey)
+            if (isPromiseLike(deletion)) await within(Promise.resolve(deletion), budget, 'auth')
+        }
+        const token = await acquireWithBudget(budget)
+        const save = cache.set(cacheKey, token)
+        if (isPromiseLike(save)) await within(Promise.resolve(save), budget, 'auth')
+        return token
+    }
+
+    async function runSharedWithCache(cache: IgdbTokenCache, evictAccessToken?: string): Promise<IgdbToken> {
         // Keep key derivation, cache read, OAuth fetch, and cache save under one shared budget
         // so concurrent callers never race or let an older save overwrite a newer token.
         const budget = deadline(defaultTimeout)
         try {
-            const cacheKey = await resolveCacheKey(budget)
-            const existing = await within(Promise.resolve(tokenCache!.get(cacheKey)), budget, 'auth')
-            if (isValidToken(existing)) {
-                if (evictAccessToken === undefined || existing.accessToken !== evictAccessToken) {
-                    return {
-                        token: { accessToken: existing.accessToken, expiresAt: existing.expiresAt },
-                        cacheKey,
-                    }
-                }
-                await within(Promise.resolve(tokenCache!.delete(cacheKey)), budget, 'auth')
-            } else if (evictAccessToken !== undefined) {
-                await within(Promise.resolve(tokenCache!.delete(cacheKey)), budget, 'auth')
-            }
-            const token = await acquireWithBudget(budget)
-            await within(Promise.resolve(tokenCache!.set(cacheKey, token)), budget, 'auth')
-            return { token, cacheKey }
+            return await readOrAcquireCachedToken(cache, budget, evictAccessToken)
         } finally {
             budget.dispose()
         }
     }
 
-    function startSharedWithCache(
-        evictAccessToken?: string,
-    ): Promise<{ readonly token: IgdbToken; readonly cacheKey: string }> {
-        const operation = runSharedWithCache(evictAccessToken)
+    function startSharedWithCache(cache: IgdbTokenCache, evictAccessToken?: string): Promise<IgdbToken> {
+        const operation = runSharedWithCache(cache, evictAccessToken)
         pendingCached = operation
         const clear = () => {
             if (pendingCached === operation) pendingCached = undefined
@@ -425,48 +453,33 @@ export function createTransport(options: IgdbClientOptions): Transport {
         return operation
     }
 
-    async function getToken(requestBudget: Deadline, staleAccessToken?: string): Promise<ResolvedToken> {
+    async function getToken(requestBudget: Deadline, staleAccessToken?: string): Promise<IgdbToken> {
         if (accessToken !== undefined) {
-            return { token: { accessToken, expiresAt: Infinity } }
+            return { accessToken, expiresAt: Infinity }
         }
         if (tokenCache !== undefined) {
             if (!dedupeAuth) {
-                const cacheKey = await resolveCacheKey(requestBudget)
-                const existing = await within(Promise.resolve(tokenCache.get(cacheKey)), requestBudget, 'auth')
-                if (isValidToken(existing)) {
-                    if (staleAccessToken === undefined || existing.accessToken !== staleAccessToken) {
-                        return {
-                            token: { accessToken: existing.accessToken, expiresAt: existing.expiresAt },
-                            cacheKey,
-                        }
-                    }
-                    await within(Promise.resolve(tokenCache.delete(cacheKey)), requestBudget, 'auth')
-                } else if (staleAccessToken !== undefined) {
-                    await within(Promise.resolve(tokenCache.delete(cacheKey)), requestBudget, 'auth')
-                }
-                const token = await acquireWithBudget(requestBudget)
-                await within(Promise.resolve(tokenCache.set(cacheKey, token)), requestBudget, 'auth')
-                return { token, cacheKey }
+                return await readOrAcquireCachedToken(tokenCache, requestBudget, staleAccessToken)
             }
 
             if (pendingCached) {
                 const resolved = await within(pendingCached, requestBudget, 'auth')
-                if (staleAccessToken === undefined || resolved.token.accessToken !== staleAccessToken) {
+                if (staleAccessToken === undefined || resolved.accessToken !== staleAccessToken) {
                     return resolved
                 }
                 // The in-flight read returned the same stale token; fall through to start or join a refresh.
             }
-            const operation = pendingCached ?? startSharedWithCache(staleAccessToken)
+            const operation = pendingCached ?? startSharedWithCache(tokenCache, staleAccessToken)
             return await within(operation, requestBudget, 'auth')
         }
 
         if (cached && cached.expiresAt > Date.now()) {
-            return { token: cached }
+            return cached
         }
         if (!dedupeAuth) {
             const token = await acquireWithBudget(requestBudget)
             cached = token
-            return { token }
+            return token
         }
         if (!pending) {
             const operation = acquireShared()
@@ -481,7 +494,7 @@ export function createTransport(options: IgdbClientOptions): Transport {
                 },
             )
         }
-        return { token: await within(pending, requestBudget, 'auth') }
+        return await within(pending, requestBudget, 'auth')
     }
 
     return {
@@ -494,7 +507,7 @@ export function createTransport(options: IgdbClientOptions): Transport {
                 for (let attempt = 0; ; attempt++) {
                     const phase = clientSecret === undefined ? 'request' : 'auth'
                     if (budget.signal.aborted) throw budget.error(phase)
-                    const { token } = await getToken(budget, staleAccessToken)
+                    const token = await getToken(budget, staleAccessToken)
                     try {
                         return await json(
                             `https://api.igdb.com/v4/${endpoint}`,
@@ -524,14 +537,16 @@ export function createTransport(options: IgdbClientOptions): Transport {
                                 }
                                 // Final 401 after retry: evict only if no shared refresh is in flight and cache still holds this token.
                                 if (!dedupeAuth || !pendingCached) {
-                                    const cacheKey = await resolveCacheKey(budget)
-                                    const current = await within(
-                                        Promise.resolve(tokenCache.get(cacheKey)),
-                                        budget,
-                                        'auth',
-                                    )
+                                    const cacheKey = derivedCacheKey ?? (await resolveCacheKey(budget))
+                                    const rawCurrent = tokenCache.get(cacheKey)
+                                    const current = isPromiseLike(rawCurrent)
+                                        ? await within(Promise.resolve(rawCurrent), budget, 'auth')
+                                        : rawCurrent
                                     if (!isValidToken(current) || current.accessToken === token.accessToken) {
-                                        await within(Promise.resolve(tokenCache.delete(cacheKey)), budget, 'auth')
+                                        const deletion = tokenCache.delete(cacheKey)
+                                        if (isPromiseLike(deletion)) {
+                                            await within(Promise.resolve(deletion), budget, 'auth')
+                                        }
                                     }
                                 }
                             } else {
