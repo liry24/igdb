@@ -1,6 +1,7 @@
 import { defineConfig } from 'oxfmt'
 
 export default defineConfig({
+    endOfLine: 'lf',
     ignorePatterns: [
         'LICENSE',
         'schema/**',
